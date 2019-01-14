@@ -1,0 +1,23 @@
+2016.06.10
+EJC
+	Fixed a bug, where the wrong inputs were specified for the DWI intensity Outliers section.
+
+2016.06.16
+EJC
+	Probabilistic and deterministic tractography are now under separate flags.
+	
+	Under DWI parameters:
+	There is no longer a order 0 threshold parameter. It was not necessary. Only order 2 and order 4 parameters remain.
+	These are f-test thresholds to clasify a voxel as single (order 2) or two tensor (order 4).
+
+2016.07.19
+EJC
+	Batch is simplified with less hardcoded paths, StudyID variable specifying the prefix is no longer necessary and has been removed.
+	
+	Comments have been added, and blocks of code which should not be edited can be collapsed.
+	
+	HYDI_DTI and NODDI have been removed from the batch. I did this because I though Dr. Chen is going to process those data. They will remain included in version 0.9 and can be reinstated in future 		versions. 
+
+2016.09.23
+EJC
+	The curve theshold for tractography has been changed to 45 degrees over 5 mm to match what I have need seeing done in the literature.

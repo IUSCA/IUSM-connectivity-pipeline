@@ -1,0 +1,14 @@
+EJC
+
+fixing the range of slice_frac to -0.5 - 0.5 form o - 1
+
+replace printcomp with pca for later version compatibility
+
+add a proper calculation of dwell time and effective echo sapcing
+
+no DWI denoiser
+
+following EDDY:
+	tensor estimation
+	reg b0 to T1 (dof6 BBR)
+	apply to other directions
