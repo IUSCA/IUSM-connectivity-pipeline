@@ -216,8 +216,7 @@ if flags.DWI.eddy == 1
     if exist(paths.DWI.UNWARP,'dir') && exist(fullfile(paths.DWI.UNWARP,'topup_unwarped.nii.gz'),'file')
         % Inputs if topup was done
         fileIn = fullfile(paths.DWI.UNWARP,'topup_unwarped.nii.gz');
-        fileMll
-ean = fullfile(paths.DWI.EDDY,'meanb0_unwarped.nii.gz');
+        fileMean = fullfile(paths.DWI.EDDY,'meanb0_unwarped.nii.gz');
     else % if topup distortion not available
        warning('Topup data not present; Will run EDYY without topup field.')
        % Extract b0 volumes from dataset
