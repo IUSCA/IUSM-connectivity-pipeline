@@ -116,73 +116,56 @@ if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
             aux = false(length(scrubbing),1);
             aux(1:configs.EPI.Step:length(scrubbing))=true;
             scrubbing = scrubbing & aux;
-            all_tp = true(length(scrubbing),1);
-            
+    
             PCA0.FC = corr(PCA0.restingROIs(validROIs,scrubbing)');
-            PCA0.FCall = corr(PCA0.restingROIs(validROIs,all_tp)');
+            PCA0.FCall = corr(PCA0.restingROIs(validROIs,:)');
             [PCA0.FCrobust,PCA0.VProbust] = f_robust_FC(PCA0.restingROIs,validROIs,scrubbing);
             [PCA0.FCrobust_all,PCA0.VProbust_all] = f_robust_FC(PCA0.restingROIs,validROIs);
-            
-            if ismember(1, configs.EPI.numCompsPCA)
-                PCA1 = load(fullfile(paths.EPI.epiGS,'PCA1',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
-                PCA1.FC = corr(PCA1.restingROIs(validROIs,scrubbing)');
-                PCA1.FCall = corr(PCA1.restingROIs(validROIs,all_tp)');
-                [PCA1.FCrobust,PCA1.VProbust] = f_robust_FC(PCA1.restingROIs,validROIs,scrubbing);
-                [PCA1.FCrobust_all,PCA1.VProbust_all] = f_robust_FC(PCA1.restingROIs,validROIs);
-            end
-            
-            if ismember(2, configs.EPI.numCompsPCA)
-                PCA2 = load(fullfile(paths.EPI.epiGS,'PCA2',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
-                PCA2.FC = corr(PCA2.restingROIs(validROIs,scrubbing)');
-                PCA2.FCall = corr(PCA2.restingROIs(validROIs,all_tp)');
-                [PCA2.FCrobust,PCA2.VProbust] = f_robust_FC(PCA2.restingROIs,validROIs,scrubbing);
-                [PCA2.FCrobust_all,PCAPCA21.VProbust_all] = f_robust_FC(PCA2.restingROIs,validROIs);
-            end
 
-            if ismember(3, configs.EPI.numCompsPCA)
-                PCA3 = load(fullfile(paths.EPI.epiGS,'PCA3',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
-                PCA3.FC = corr(PCA3.restingROIs(validROIs,scrubbing)');
-                PCA3.FCall = corr(PCA3.restingROIs(validROIs,all_tp)');
-                [PCA3.FCrobust,PCA3.VProbust] = f_robust_FC(PCA3.restingROIs,validROIs,scrubbing);
-                [PCA3.FCrobust_all,PCA3.VProbust_all] = f_robust_FC(PCA3.restingROIs,validROIs);
-            end
-            
-            if ismember(4, configs.EPI.numCompsPCA)
-                PCA4 = load(fullfile(paths.EPI.epiGS,'PCA4',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
-                PCA4.FC = corr(PCA4.restingROIs(validROIs,scrubbing)');
-                PCA4.FCall = corr(PCA4.restingROIs(validROIs,all_tp)');
-                [PCA4.FCrobust,PCA4.VProbust] = f_robust_FC(PCA4.restingROIs,validROIs,scrubbing);
-                [PCA4.FCrobust_all,PCA4.VProbust_all] = f_robust_FC(PCA4.restingROIs,validROIs);
-            end
-            
-            if ismember(5, configs.EPI.numCompsPCA)
-                PCA5 = load(fullfile(paths.EPI.epiGS,'PCA5',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
-                PCA5.FC = corr(PCA5.restingROIs(validROIs,scrubbing)');
-                PCA5.FCall = corr(PCA5.restingROIs(validROIs,all_tp)');
-                [PCA5.FCrobust,PCA5.VProbust] = f_robust_FC(PCA5.restingROIs,validROIs,scrubbing);
-                [PCA5.FCrobust_all,PCA5.VProbust_all] = f_robust_FC(PCA5.restingROIs,validROIs);
-            end
+            PCA1 = load(fullfile(paths.EPI.epiGS,'PCA1',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
+            PCA1.FC = corr(PCA1.restingROIs(validROIs,scrubbing)');
+            PCA1.FCall = corr(PCA1.restingROIs(validROIs,:)');
+            [PCA1.FCrobust,PCA1.VProbust] = f_robust_FC(PCA1.restingROIs,validROIs,scrubbing);
+            [PCA1.FCrobust_all,PCA1.VProbust_all] = f_robust_FC(PCA1.restingROIs,validROIs);
+
+            PCA3 = load(fullfile(paths.EPI.epiGS,'PCA3',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
+            PCA3.FC = corr(PCA3.restingROIs(validROIs,scrubbing)');
+            PCA3.FCall = corr(PCA3.restingROIs(validROIs,:)');
+            [PCA3.FCrobust,PCA3.VProbust] = f_robust_FC(PCA3.restingROIs,validROIs,scrubbing);
+            [PCA3.FCrobust_all,PCA3.VProbust_all] = f_robust_FC(PCA3.restingROIs,validROIs);
+
+            PCA5 = load(fullfile(paths.EPI.epiGS,'PCA5',strcat('10_epi_',parcs.plabel(k).name,'_ROIs.mat')));
+            PCA5.FC = corr(PCA5.restingROIs(validROIs,scrubbing)');
+            PCA5.FCall = corr(PCA5.restingROIs(validROIs,:)');
+            [PCA5.FCrobust,PCA5.VProbust] = f_robust_FC(PCA5.restingROIs,validROIs,scrubbing);
+            [PCA5.FCrobust_all,PCA5.VProbust_all] = f_robust_FC(PCA5.restingROIs,validROIs);
 
 %% FIGURE 3 Mean timeseries from each ROI at each PCA component
             if (flags.EPI.FigsFC==1)
-                PCAs = {};
-                nPCA = length(configs.EPI.numCompsPCA);
-                for i = 1:nPCA
-                    variableName = sprintf('PCA%d',configs.EPI.numCompsPCA(i));
-                    eval(['PCAs{' num2str(i),'} = ',variableName,';']);
-                end
-                
                 figure
-                for i = 1:nPCA
-                    PCA_resting_i = PCAs{i}.restingROIs;
-                    subplot(nPCA,1,i);
+                subplot(4,1,1);
+                minY = floor(prctile(PCA0.restingROIs(~isnan(PCA0.restingROIs)),0.5))-5;
+                maxY = ceil(prctile(PCA0.restingROIs(~isnan(PCA0.restingROIs)),99.5))+5;
+                plot(PCA0.restingROIs'); axis([1 numTimePoints minY maxY]); 
+                ylabel('BOLD Signal','FontSize',10); 
+                title({sprintf('%s \n %s', subjectinfo,'ROIs PCA0')},'FontSize',8);
+                subplot(4,1,2);
+                minY = floor(prctile(PCA1.restingROIs(~isnan(PCA1.restingROIs)),0.5))-5;
+                maxY = ceil(prctile(PCA1.restingROIs(~isnan(PCA1.restingROIs)),99.5))+5;
+                plot(PCA1.restingROIs'); axis([1 numTimePoints minY maxY]); 
+                ylabel('BOLD Signal','FontSize',10); title({'ROIs PCA1'}, 'FontSize',8);
+                subplot(4,1,3);
+                minY = floor(prctile(PCA3.restingROIs(~isnan(PCA3.restingROIs)),0.5))-5;
+                maxY = ceil(prctile(PCA3.restingROIs(~isnan(PCA3.restingROIs)),99.5))+5;
+                plot(PCA3.restingROIs'); axis([1 numTimePoints minY maxY]); 
+                ylabel('BOLD Signal','FontSize',10); title({'ROIs PCA3'}, 'FontSize',8);
+                subplot(4,1,4);
+                minY = floor(prctile(PCA5.restingROIs(~isnan(PCA5.restingROIs)),0.5))-5;
+                maxY = ceil(prctile(PCA5.restingROIs(~isnan(PCA5.restingROIs)),99.5))+5;
+                plot(PCA5.restingROIs'); axis([1 numTimePoints minY maxY]); 
+                xlabel('Time points (TRs)','FontSize',10); 
+                ylabel('BOLD Signal','FontSize',10); title({'ROIs PCA5'}, 'FontSize',8);
 
-                    minY = floor(prctile(PCA_resting_i(~isnan(PCA_resting_i)),0.5))-5;
-                    maxY = ceil(prctile(PCA_resting_i(~isnan(PCA_resting_i)),99.5))+5;
-                    plot(PCA_resting_i'); axis([1 numTimePoints minY maxY]); 
-                    ylabel('BOLD Signal','FontSize',10); 
-                    title({sprintf('%s \n ROIs PCA%d', subjectinfo,configs.EPI.numCompsPCA(i))},'FontSize',8);
-                end
                 if flags.EPI.SaveFigs==1
                     figName = sprintf('epi_fig3_%s',subjID);
                     save_figure(gcf,paths.EPI.fig,figName,dpi)
@@ -191,32 +174,53 @@ if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
 
 %% FIGURE 4 Pearson correlation matrices and histograms
             if (flags.EPI.FigsFC==1)
-                
                 figure
                 size_factor = 0.02;
                 hold on;
-                for i = 1:nPCA
-                    h1 = subplot(2,nPCA,i);
-                    p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                    set(h1,'pos',p);
-                    imagesc(PCAs{i}.FC,[configs.EPI.minVal,configs.EPI.maxVal]);
-                    axis square; xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
-                    if i == 1
-                        title({sprintf('%s \n FC PCA%d',subjectinfo,configs.EPI.numCompsPCA(i))}, 'FontSize',8); colormap jet;
-                    else
-                        title({sprintf('FC PCA%d', configs.EPI.numCompsPCA(i))}, 'FontSize',8); colormap jet;
-                    end
-                end
+                h1 = subplot(2,4,1);
+                p=get(h1,'pos'); p(3)=p(3)+size_factor;
+                set(h1,'pos',p);
+                imagesc(PCA0.FC,[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
 
-                mask = triu(true(size(PCAs{1}.FC)),1);
-                
-                for i = 1:nPCA
-                    h1 = subplot(2,nPCA,i+nPCA);
-                    p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                    set(h1,'pos',p);
-                    hist(PCAs{i}.FC(mask),configs.EPI.numBins); axis square; set(gca,'ytick',[])
-                    title({sprintf('FChist PCA%d', configs.EPI.numCompsPCA(i))}, 'FontSize',8); xlabel('Pearson coeff')
-                end
+                title({sprintf('%s \n %s',subjectinfo,'FC PCA0')}, 'FontSize',8); colormap jet;
+                h2 = subplot(2,4,2);
+                p=get(h2,'pos'); p(3)=p(3)+size_factor;
+                set(h2,'pos',p);
+                imagesc(PCA1.FC,[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                title({'FC PCA1'}, 'FontSize',8); colormap jet;
+                h3 = subplot(2,4,3);
+                p=get(h3,'pos'); p(3)=p(3)+size_factor;
+                set(h3,'pos',p);
+                imagesc(PCA3.FC,[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                title({'FC PCA3'}, 'FontSize',8); colormap jet;
+                h4 = subplot(2,4,4);
+                p=get(h4,'pos'); p(3)=p(3)+size_factor;
+                set(h4,'pos',p);
+                imagesc(PCA5.FC,[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                title({'FC PCA5'}, 'FontSize',8); colormap jet;
+
+                mask = triu(true(size(PCA0.FC)),1);
+
+                h5 = subplot(2,4,5);
+                p=get(h5,'pos'); p(3)=p(3)+size_factor;
+                set(h5,'pos',p);
+                hist(PCA0.FC(mask),configs.EPI.numBins); axis square; set(gca,'ytick',[])
+                title({'FChist PCA0'}, 'FontSize',8); xlabel('Pearson coeff')
+                h6 = subplot(2,4,6);
+                p=get(h6,'pos'); p(3)=p(3)+size_factor;
+                set(h6,'pos',p);
+                hist(PCA1.FC(mask),configs.EPI.numBins); axis square; set(gca,'ytick',[])
+                title({'FChist PCA1'}, 'FontSize',8); xlabel('Pearson coeff')
+                h7 = subplot(2,4,7);
+                p=get(h7,'pos'); p(3)=p(3)+size_factor;
+                set(h7,'pos',p);
+                hist(PCA3.FC(mask),configs.EPI.numBins); axis square; set(gca,'ytick',[])
+                title({'FChist PCA3'}, 'FontSize',8); xlabel('Pearson coeff')
+                h8 = subplot(2,4,8);
+                p=get(h8,'pos'); p(3)=p(3)+size_factor;
+                set(h8,'pos',p);
+                hist(PCA5.FC(mask),configs.EPI.numBins); axis square; set(gca,'ytick',[])
+                title({'FChist PCA5'}, 'FontSize',8); xlabel('Pearson coeff')
 
                 if flags.EPI.SaveFigs==1
                     figName = sprintf('epi_fig4_%s',subjID);
@@ -240,111 +244,161 @@ if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
                     if flags.EPI.FigsFC==1
                         figure
                         hold on;
-                        
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            imagesc(PCAs{i}.FCall(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]);
-                            axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
-                            if i == 1
-                                title({sprintf('%s \n FC PCA%d All',subjectinfo,configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                                colormap jet;
-                            else
-                              title({sprintf('FC PCA%d All', configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                              colormap jet; 
-                            end
-                        end
-                        
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i+nPCA);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            imagesc(PCAs{i}.FC(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]);
-                            axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
-                            title({sprintf('FC PCA%d Scrubbed', configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                            colormap jet; 
-                        end
-                        
+                        h1 = subplot(3,4,1);
+                        p=get(h1,'pos'); p(3)=p(3)+size_factor;
+                        set(h1,'pos',p);
+                        imagesc(PCA0.FCall(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({sprintf('%s \n %s',subjectinfo,'FC PCA0 All')}, 'FontSize',8); colormap jet;
+                        h2 = subplot(3,4,2);
+                        p=get(h2,'pos'); p(3)=p(3)+size_factor;
+                        set(h2,'pos',p);
+                        imagesc(PCA1.FCall(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA1 All'}, 'FontSize',8); colormap jet;
+                        h3 = subplot(3,4,3);
+                        p=get(h3,'pos'); p(3)=p(3)+size_factor;
+                        set(h3,'pos',p);
+                        imagesc(PCA3.FCall(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA3 All'}, 'FontSize',8); colormap jet;
+                        h4 = subplot(3,4,4);
+                        p=get(h4,'pos'); p(3)=p(3)+size_factor;
+                        set(h4,'pos',p);
+                        imagesc(PCA5.FCall(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA5 All'}, 'FontSize',8); colormap jet;
+
+                        h1 = subplot(3,4,5);
+                        p=get(h1,'pos'); p(3)=p(3)+size_factor;
+                        set(h1,'pos',p);
+                        imagesc(PCA0.FC(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA0 Scrubbed'}, 'FontSize',8); colormap jet;
+                        h2 = subplot(3,4,6);
+                        p=get(h2,'pos'); p(3)=p(3)+size_factor;
+                        set(h2,'pos',p);
+                        imagesc(PCA1.FC(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA1 Scrubbed'},'FontSize',8); colormap jet;
+                        h3 = subplot(3,4,7);
+                        p=get(h3,'pos'); p(3)=p(3)+size_factor;
+                        set(h3,'pos',p);
+                        imagesc(PCA3.FC(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA3 Scrubbed'}, 'FontSize',8); colormap jet;
+                        h4 = subplot(3,4,8);
+                        p=get(h4,'pos'); p(3)=p(3)+size_factor;
+                        set(h4,'pos',p);
+                        imagesc(PCA5.FC(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA5 Scrubbed'}, 'FontSize',8); colormap jet;
 
                         Parc.numNetworks = max(Parc.ROIs);
-                        RSmask = false(size(PCAs{i}.FC));
+                        RSmask = false(size(PCA0.FC));
                         for i=1:Parc.numNetworks
                             aux = (Parc.ROIs(Parc.Order)==i);
                             RSmask(aux,aux)=true;
                         end
-                        
-                        
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i+2*nPCA);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            spy(RSmask); axis square; 
-                            title(Parc.name,'FontSize',8);
-                            xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])             
-                            colormap jet; 
-                        end
+
+                        h5 = subplot(3,4,9);
+                        p=get(h5,'pos'); p(3)=p(3)+size_factor;
+                        set(h5,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name,'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h6 = subplot(3,4,10);
+                        p=get(h6,'pos'); p(3)=p(3)+size_factor;
+                        set(h6,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name,'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h7 = subplot(3,4,11);
+                        p=get(h7,'pos'); p(3)=p(3)+size_factor;
+                        set(h7,'pos',p);
+                        spy(RSmask); axis square;  
+                        title(Parc.name, 'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h8 = subplot(3,4,12);
+                        p=get(h8,'pos'); p(3)=p(3)+size_factor;
+                        set(h8,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name, 'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
 
                         if flags.EPI.SaveFigs==1
                             figName = sprintf('epi_fig5_%s_%s',subjID,Parc.title);
                             save_figure(gcf,paths.EPI.fig,figName,dpi)
                         end
                     end
-                    
 %% FIGURE 6 Scrubbed Matrices
                     if flags.EPI.FigsFC==1
                         figure
                         hold on;
-                        
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            imagesc(PCAs{i}.FCrobust_all(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]);
-                            axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
-                            if i == 1
-                                title({sprintf('%s \n FC PCA%d All',subjectinfo,configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                                colormap jet;
-                            else
-                              title({sprintf('FC PCA%d All', configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                              colormap jet; 
-                            end
-                        end
-                        
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i+nPCA);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            imagesc(PCAs{i}.FCrobust(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]);
-                            axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
-                            title({sprintf('FC PCA%d Scrubbed', configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-                            colormap jet; 
+                        h1 = subplot(3,4,1);
+                        p=get(h1,'pos'); p(3)=p(3)+size_factor;
+                        set(h1,'pos',p);
+                        imagesc(PCA0.FCrobust_all(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({sprintf('%s \n %s',subjectinfo,'FC PCA0 All')}, 'FontSize',8);
+                        h2 = subplot(3,4,2);
+                        p=get(h2,'pos'); p(3)=p(3)+size_factor;
+                        set(h2,'pos',p);
+                        imagesc(PCA1.FCrobust_all(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA1 All'}, 'FontSize',8);
+                        h3 = subplot(3,4,3);
+                        p=get(h3,'pos'); p(3)=p(3)+size_factor;
+                        set(h3,'pos',p);
+                        imagesc(PCA3.FCrobust_all(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA3 All'}, 'FontSize',8);
+                        h4 = subplot(3,4,4);
+                        p=get(h4,'pos'); p(3)=p(3)+size_factor;
+                        set(h4,'pos',p);
+                        imagesc(PCA5.FCrobust_all(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA5 All'}, 'FontSize',8);
 
-                        end
+                        h1 = subplot(3,4,5);
+                        p=get(h1,'pos'); p(3)=p(3)+size_factor;
+                        set(h1,'pos',p);
+                        imagesc(PCA0.FCrobust(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA0 Scrubbed'}, 'FontSize',8);
+                        h2 = subplot(3,4,6);
+                        p=get(h2,'pos'); p(3)=p(3)+size_factor;
+                        set(h2,'pos',p);
+                        imagesc(PCA1.FCrobust(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA1 Scrubbed'}, 'FontSize',8);
+                        h3 = subplot(3,4,7);
+                        p=get(h3,'pos'); p(3)=p(3)+size_factor;
+                        set(h3,'pos',p);
+                        imagesc(PCA3.FCrobust(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA3 Scrubbed'}, 'FontSize',8);
+                        h4 = subplot(3,4,8);
+                        p=get(h4,'pos'); p(3)=p(3)+size_factor;
+                        set(h4,'pos',p);
+                        imagesc(PCA5.FCrobust(Parc.Order,Parc.Order),[configs.EPI.minVal,configs.EPI.maxVal]); axis square; xlabel('ROIs'); ylabel('ROIs');  set(gca,'xtick',[]); set(gca,'ytick',[])
+                        title({'FC PCA5 Scrubbed'}, 'FontSize',8);
 
                         Parc.numNetworks = max(Parc.ROIs);
-                        RSmask = false(size(PCAs{i}.FC));
+                        RSmask = false(size(PCA0.FC));
                         for i=1:Parc.numNetworks
                             aux = (Parc.ROIs(Parc.Order)==i);
                             RSmask(aux,aux)=true;
                         end
 
-                        for i = 1:nPCA
-                            h1 = subplot(3,nPCA,i+2*nPCA);
-                            p=get(h1,'pos'); p(3)=p(3)+size_factor;
-                            set(h1,'pos',p);
-                            spy(RSmask); axis square; 
-                            title(Parc.name,'FontSize',8);
-                            xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])             
-                            colormap jet; 
-                        end
+                        h5 = subplot(3,4,9);
+                        p=get(h5,'pos'); p(3)=p(3)+size_factor;
+                        set(h5,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name,'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h6 = subplot(3,4,10);
+                        p=get(h6,'pos'); p(3)=p(3)+size_factor;
+                        set(h6,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name, 'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h7 = subplot(3,4,11);
+                        p=get(h7,'pos'); p(3)=p(3)+size_factor;
+                        set(h7,'pos',p);
+                        spy(RSmask); axis square;  
+                        title(Parc.name,'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
+                        h8 = subplot(3,4,12);
+                        p=get(h8,'pos'); p(3)=p(3)+size_factor;
+                        set(h8,'pos',p);
+                        spy(RSmask); axis square; 
+                        title(Parc.name,'FontSize',8); xlabel('ROIs'); ylabel('ROIs'); set(gca,'xtick',[]); set(gca,'ytick',[])
 
                         if flags.EPI.SaveFigs==1
                             figName = sprintf('epi_fig6_%s_%s',subjID,Parc.title);
                             save_figure(gcf,paths.EPI.fig,figName,dpi)
                         end
                     end
-                    %clear Parc
+                    clear Parc
                 end
             end
         end
@@ -352,35 +406,47 @@ if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
 
 %% FIGURE 7 Cross correlation of PCA 
     if flags.EPI.FigsFC==1
-        ngrid = (nPCA-1) * (nPCA-1);
         figure 
-        
-          
         mask(PCA0.ROIs_numVoxels<25,:) = false;
         mask(:,PCA0.ROIs_numVoxels<25) = false;
-        
-        comparision = fliplr(combnk(nPCA:-1:1, 2));
-        for i = 1:nchoosek(nPCA,2)
-            ii = comparision(i,1);
-            jj = comparision(i,2);
-            if i == (nPCA-1)
-                plot_index = i;
-            else
-                plot_index = sum(0:floor(i/(nPCA-1)))+i;
-            end
-            subplot((nPCA-1),(nPCA-1),plot_index)
-            plot(PCAs{ii}.FC(mask),PCAs{jj}.FC(mask),'.'); axis square
-            r=corr(PCAs{ii}.FC(mask),PCAs{jj}.FC(mask));
-            if i == 1
-                title({sprintf('%s \n PCA%d vs PCA%d, r = %0.2f',subjectinfo,...
-                configs.EPI.numCompsPCA(ii), configs.EPI.numCompsPCA(jj),r)}, 'FontSize',8);
-            else
-                title({sprintf('PCA%d vs PCA%d, r = %0.2f',configs.EPI.numCompsPCA(ii), configs.EPI.numCompsPCA(jj),...
-                    r)}, 'FontSize',7);
-            end
-            xlabel('Pearson coeff','FontSize',6); 
-            ylabel('Pearson coeff','FontSize',6);
-        end
+        subplot(3,3,1)
+        plot(PCA0.FC(mask),PCA1.FC(mask),'.'); axis square
+        r=corr(PCA0.FC(mask),PCA1.FC(mask));
+        title({sprintf('%s \n PCA0 vs PCA1, r = %0.2f',subjectinfo, r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
+        subplot(3,3,2);
+        plot(PCA0.FC(mask),PCA3.FC(mask),'.'); axis square;
+        r=corr(PCA0.FC(mask),PCA3.FC(mask));
+        title({sprintf('PCA0 vs PCA3, r = %0.2f',r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
+        subplot(3,3,3);
+        plot(PCA0.FC(mask),PCA5.FC(mask),'.'); axis square;
+        r=corr(PCA0.FC(mask),PCA5.FC(mask));
+        title({sprintf('PCA0 vs PCA5, r = %0.2f',r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
+
+        subplot(3,3,5);
+        plot(PCA1.FC(mask),PCA3.FC(mask),'.'); axis square;
+        r=corr(PCA1.FC(mask),PCA3.FC(mask));
+        title({sprintf('PCA1 vs PCA3, r = %0.2f',r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
+        subplot(3,3,6);
+        plot(PCA1.FC(mask),PCA5.FC(mask),'.'); axis square;
+        r=corr(PCA1.FC(mask),PCA5.FC(mask));
+        title({sprintf('PCA1 vs PCA5, r = %0.2f',r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
+
+        subplot(3,3,9);
+        plot(PCA3.FC(mask),PCA5.FC(mask),'.'); axis square;
+        r=corr(PCA3.FC(mask),PCA5.FC(mask));
+        title({sprintf('PCA3 vs PCA5, r = %0.2f',r)}, 'FontSize',8);
+        xlabel('Pearson coeff','FontSize',8); 
+        ylabel('Pearson coeff','FontSize',8);
 
         if flags.EPI.SaveFigs==1
             figName = sprintf('epi_fig7_%s',subjID);
@@ -389,17 +455,42 @@ if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
     end
 %% Save Correlation Matrices (Functional Connectomes)
     if flags.EPI.SaveMats==1
-        for i = 1:nPCA 
-            sentence = sprintf('rm %s',fullfile(paths.EPI.epiGS,sprintf('PCA%d', configs.EPI.numCompsPCA(i)),'FC*.mat'));
-            [~,result] = system(sentence); %#ok<*ASGLU>
-            FCscrubbing = PCAs{i}.FC; %#ok<*NASGU>
-            FCrobust = PCAs{i}.FCrobust;
-            VProbust = PCAs{i}.VProbust;
-            save(fullfile(paths.EPI.epiGS,sprintf('PCA%d', configs.EPI.numCompsPCA(i)),'FCscrubbing.mat'),'FCscrubbing');
-            save(fullfile(paths.EPI.epiGS,sprintf('PCA%d', configs.EPI.numCompsPCA(i)),'FCrobust.mat'),'FCrobust');
-            save(fullfile(paths.EPI.epiGS,sprintf('PCA%d', configs.EPI.numCompsPCA(i)),'VProbust.mat'),'VProbust');
+        
+        sentence = sprintf('rm %s',fullfile(paths.EPI.epiGS,'PCA0','FC*.mat'));
+        [~,result] = system(sentence); %#ok<*ASGLU>
+        FCscrubbing = PCA0.FC; %#ok<*NASGU>
+        FCrobust = PCA0.FCrobust;
+        VProbust = PCA0.VProbust;
+        save(fullfile(paths.EPI.epiGS,'PCA0','FCscrubbing.mat'),'FCscrubbing');
+        save(fullfile(paths.EPI.epiGS,'PCA0','FCrobust.mat'),'FCrobust');
+        save(fullfile(paths.EPI.epiGS,'PCA0','VProbust.mat'),'VProbust');
 
-        end
+        sentence = sprintf('rm %s',fullfile(paths.EPI.epiGS,'PCA1','FC*.mat'));
+        [~,result] = system(sentence);
+        FCscrubbing = PCA1.FC;
+        FCrobust = PCA1.FCrobust;
+        VProbust = PCA1.VProbust;
+        save(fullfile(paths.EPI.epiGS,'PCA1','FCscrubbing.mat'),'FCscrubbing');
+        save(fullfile(paths.EPI.epiGS,'PCA1','FCrobust.mat'),'FCrobust');
+        save(fullfile(paths.EPI.epiGS,'PCA1','VProbust.mat'),'VProbust');
+
+        sentence = sprintf('rm %s',fullfile(paths.EPI.epiGS,'PCA3','FC*.mat'));
+        [status,result] = system(sentence);
+        FCscrubbing = PCA3.FC;
+        FCrobust = PCA3.FCrobust;
+        VProbust = PCA3.VProbust;
+        save(fullfile(paths.EPI.epiGS,'PCA3','FCscrubbing.mat'),'FCscrubbing');
+        save(fullfile(paths.EPI.epiGS,'PCA3','FCrobust.mat'),'FCrobust');
+        save(fullfile(paths.EPI.epiGS,'PCA3','VProbust.mat'),'VProbust');
+
+        sentence = sprintf('rm %s',fullfile(paths.EPI.epiGS,'PCA5','FC*.mat'));
+        [~,result] = system(sentence);
+        FCscrubbing = PCA5.FC;
+        FCrobust = PCA5.FCrobust;
+        VProbust = PCA5.VProbust;
+        save(fullfile(paths.EPI.epiGS,'PCA5','FCscrubbing.mat'),'FCscrubbing');
+        save(fullfile(paths.EPI.epiGS,'PCA5','FCrobust.mat'),'FCrobust');
+        save(fullfile(paths.EPI.epiGS,'PCA5','VProbust.mat'),'VProbust');
     end
 else
     if exist(fullfile(paths.EPI.epiGS,'figures'),'dir')
@@ -411,54 +502,3 @@ else
         [~,result] = system(sentence);
     end
 end
-
-
-%% Save Block-wise Correlation Matrices
-if flags.EPI.SaveBlockMats==1
-    figure
-    hold on;
-    for i = 1:nPCA
-        h1 = subplot(2,nPCA,i);
-        p=get(h1,'pos'); p(3)=p(3)+size_factor;
-        set(h1,'pos',p);
-        colormap(redblue)
-        % Calculate block-wise mean connectivity matrices
-        PCA_FC_blockWise = zeros(Parc.numNetworks, Parc.numNetworks);
-        for ii = 1:Parc.numNetworks
-            for jj = 1:Parc.numNetworks
-                PCA_FC_blockWise(ii, jj) = nanmean(PCAs{i}.FCrobust_all(Parc.ROIs == ii, Parc.ROIs == jj),'all');
-            end
-        end
-
-        imagesc(PCA_FC_blockWise,[-0.4,0.4]); axis square; xlabel('Network'); ylabel('Networks');
-        set(gca,'xtick',[]); set(gca,'ytick',[])
-        if i == 1
-            title({sprintf('%s \n FC PCA%d All',subjectinfo, configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-        else
-            title({sprintf('FC PCA%d All',configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-        end
-    end
-
-    for i = 1:nPCA
-        h1 = subplot(2,nPCA,i+nPCA);
-        p=get(h1,'pos'); p(3)=p(3)+size_factor;
-        set(h1,'pos',p);
-        % Calculate block-wise mean connectivity matrices
-        PCA_FC_blockWise = zeros(Parc.numNetworks, Parc.numNetworks);
-        for ii = 1:Parc.numNetworks
-            for jj = 1:Parc.numNetworks
-                PCA_FC_blockWise(ii, jj) = nanmean(PCAs{i}.FCrobust(Parc.ROIs == ii, Parc.ROIs == jj),'all');
-            end
-        end
-        imagesc(PCA_FC_blockWise,[-0.4,0.4]); axis square; xlabel('Network'); ylabel('Networks');  set(gca,'xtick',[]); set(gca,'ytick',[])
-        title({sprintf('FC PCA%d Scrubbed',configs.EPI.numCompsPCA(i))}, 'FontSize',8);
-    end
-            
-    if flags.EPI.SaveFigs==1
-        figName = sprintf('epi_fig8_%s_%s_blockwise',subjID,Parc.title);
-        save_figure(gcf,paths.EPI.fig,figName,dpi)
-    end
-end
-    clear Parc
-end
-

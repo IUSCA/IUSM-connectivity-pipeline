@@ -9,8 +9,9 @@
             %------------------------------------------------%
             %  SET PATH TO THE CONNECTOME SCRIPTS DIRECTORY  %
             %------------------------------------------------%
+
     % Add path to connectome scripts directory
-paths.scripts = '/usr/local/IUSM-connectivity-pipeline/connectome_scripts';
+paths.scripts = '/datay1/IUSM-connectivity-pipeline/connectome_scripts';
 addpath(paths.scripts);
     % path to use MRIread MRIwrite
 addpath(fullfile(paths.scripts,'toolbox_matlab_nifti/'));
@@ -24,10 +25,6 @@ addpath(genpath(fullfile(paths.scripts,'/MRIDenoisingPackage')));
 paths.FSL = '/usr/local/fsl/bin';
     % FSL setup
 FSLsetup = 'FSLDIR=/usr/local/fsl; . ${FSLDIR}/etc/fslconf/fsl.sh; PATH=${FSLDIR}/bin:${PATH}; export FSLDIR PATH';
-%FSLsetup = 'FSLDIR=/data04/Zikai/IUSM-connectivity-pipeline/fsl/; . ${FSLDIR}/etc/fslconf/fsl.sh; PATH=${FSLDIR}/bin:${PATH}; export FSLDIR PATH';
-
-    % Path to feat
-paths.feat = '/usr/local/fsl/bin/feat';
     % Path to AFNI
 paths.AFNI = '/usr/local/afni';
     % Path to MRIcroGL
@@ -39,23 +36,14 @@ paths.CamTrackSetup=sprintf('PATH=%s:${PATH}',fullfile('/usr/local/camino-trackv
     % DTItk setup
 paths.DTItkSetup=sprintf('PATH=%s:${PATH}',fullfile('/usr/local/dtitk','bin'));
 
-%% ICA-AROMA paths set up
-    % path to ICA-AROMA 
-paths.aroma = '/usr/local/fsl/ICA-AROMA/ICA_AROMA.py'; % the program of ica-aroma has to be a python files
-    % path to standard images 
-paths.stdImg = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain'; % paths to standard image
-    % ICA-AROMA directory name (optional, if ICA-AROMA has been processed
-    % prior to running to pipeline
-configs.name.ica_aroma_folder = 'ICA_AROMA';
-
 %%
                     %------------------------------%
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/XXXX/CONNECTIVITY/datadir/';
+paths.data = '/datay1/test';
     % generate a list of subjects from directories in path
-%subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and '..'
+subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and '..'
 
     % If you wish to exclude subjects from the above generated list, use
     % the below line, replacing SUBJECT1 with the subject you want to
@@ -68,14 +56,8 @@ paths.data = '/XXXX/CONNECTIVITY/datadir/';
     % use the following three lines as example. If processing more that 2
     % subjects copy and paste the second line as necessary.
     
-clear subjectList %remove the above generated list
-subjects = ["NNNN0001"; "NNNN0002"];
-
-% A more convenient  way for user to define subjectList
-for i = 1:length(subjects)
-   subjectList(i).name = char(subjects(i)); 
-end
-
+%clear subjectList %remove the above generated list
+%subjectList(1).name = 'BAD0326';
 %subjectList(end+1).name = 'SUBJECT2'; % copy this line for additional subjects
 
 %%
@@ -92,14 +74,9 @@ end
 %          |         |
 %          |         |               (SPIN-ECHO)       (GRADIENT ECHO)
 %          |         -- UNWARP -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
-%          |         |         | 
-%          |         |         -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
-%          |         |
-%          |         -- UNWARPED uf*.nii.gz (MELODIC UNWARPED IMAGES)
-%          |         |
-%          |         |
-%          |         -- FEAT -- FEAT_PREP
-%          |
+%          |                   | 
+%          |                   -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+%          | 
 %          -- DWI -- DICOMS
 %                 |
 %                 -- UNWARP -- B0_PA_DCM
@@ -111,10 +88,9 @@ configs.name.epiFolder = 'EPI';
         configs.name.PAdcm = 'SEFM_PA_DICOMS'; % Spin Echo P-A
         configs.name.GREmagdcm = 'GREFM_MAG_DICOMS'; % Gradient echo FM magnitude series
         configs.name.GREphasedcm = 'GREFM_PHASE_DICOMS'; % Gradient echo FM phase map series
-    configs.name.melodicUnwarpedFolder = 'UNWARPED'; % Unwarped images (from Melodic)
 configs.name.DWI = 'DWI';
     configs.name.unwarpFolder = 'UNWARP';
-        configs.name.dcmPA = 'B0_PA_DCM'; % b0 opposite phase encoding
+        configs.name.dcmPA = 'B0_PA_DCM'; %b0 opposite phase encoding
 
 configs.name.dcmFolder = 'DICOMS';
 configs.name.dcmFiles = 'dcm'; % Dicom file extension
