@@ -1,8 +1,8 @@
-function [paths,flags,configs,parcs]=f_functional_connectivity(paths,flags,configs,parcs)
+function [paths,flags,configs,parcs,params]=f_functional_connectivity(paths,flags,configs,parcs)
 %                       F_FUNCTIONAL_CONNECTIVITY
 % Functional MNI preprocessing, registration to anatony and preparation of
 % connectivity matrices.
-%
+%                       
 % Contributors:
 %   Joaquin Goni, Purdue University
 %   Joey Contreras, University Southern California
@@ -10,6 +10,11 @@ function [paths,flags,configs,parcs]=f_functional_connectivity(paths,flags,confi
 %   Mario Dzemidzic, Indiana University School of Medicine
 %   Evgeny Chumin, Indiana University School of Medicine
 %   Zikai Lin, Indiana University School of Medicine
+%
+%   Update:
+%       03/26/2019 Integrated MELODIC and ICA-AROMA. -ZL 
+%       04/30/2019 PCA not hardwired to 0 1 3 5 any more, can be defined by
+%       user in batch_set_up.m
 
 %% Convert dcm2nii
 if flags.EPI.dcm2niix == 1
@@ -194,6 +199,136 @@ if flags.EPI.ReadHeaders==1
     params.asset = str2double(tmp(1:(strfind(tmp,'\')-1)));
     fprintf('Header extracted asset: %f\n',params.asset)
     save(fullfile(paths.EPI.dir,'0_param_dcm_hdr.mat'),'params');
+end
+
+%% ICA-AROMA
+if flags.EPI.ICA_AROMA == 1
+    disp('-----------------------')
+    disp('0. ICA-AROMA')
+    disp('-----------------------')
+    
+    fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
+    sentence=sprintf('%s/fslval %s dim4',paths.FSL,fileIn);
+    [~,result] = system(sentence);
+    params.nvols = str2double(result);
+    
+    if (flags.EPI.MelodicUnwarped || flags.EPI.MotionCorr || flags.EPI.SliceTimingCorr || flags.EPI.SpinEchoUnwarp || flags.EPI.UseUnwarped || flags.EPI.RunTopup) == true
+        cprintf('err', 'ICA AROMA should have finished unwarping and motion correction, will skip those steps...\n')
+        flags.EPI.MelodicUnwarped = 0;
+        flags.EPI.MotionCorr = 0;
+        flags.EPI.SliceTimingCorr = 0;
+        flags.EPI.SpinEchoUnwarp = 0;
+        flags.EPI.UseUnwarped = 0;
+        flags.EPI.RunTopup = 0;
+    end
+        
+    if flags.EPI.useExistAROMA == 0
+        % No AROMA being run, check if single session melodic is run
+        if flags.EPI.feat == 1
+            % Run single session melodic
+            disp('Running single session MELODIC.')
+            disp('-----------------------')
+            
+            paths.EPI.feat_prep_dir = fullfile(paths.EPI.feat_out, 'FEAT_PREP');
+            if ~exist(paths.EPI.feat_prep_dir, 'dir')
+                error('FEAT/PREP/ not exists, exiting...')
+            end  
+            fprintf('FEAT prep directory: ')
+            cprintf('hyper','%s\n',  paths.EPI.feat_prep_dir) % Display feat prep directory
+            
+            % Path for 4D AVW data
+            paths.EPI.feat_4Dnifti = fullfile(paths.EPI.feat_prep_dir, sprintf('u%s.nii.gz',configs.EPI.subject));
+            paths.EPI.structImage  = fullfile(paths.EPI.dir, sprintf('s%s_brain.nii.gz', configs.EPI.subject)); % Structural image path
+            fprintf('Structural image: ')
+            cprintf('hyper','%s\n', paths.EPI.structImage)
+            
+            % Write fsf files
+            fprintf('Writing feat structure file (.fsf)..,')
+            [paths, configs, params] = f_write_fsf(configs, params, paths);
+            cprintf('*Blue','Finished\n')
+            
+            % Run single session melodic
+            fprintf('Running single session MELODIC, this might take a while...')
+            sentence = sprintf('%s %s', paths.feat, configs.EPI.subjectFSF);
+            [status, result] = system(sentence);
+            cprintf('*Blue','Finished\n')
+       end
+        
+       disp('Running ICA-AROMA')
+       if ~exist(paths.EPI.feat_subject_out,'dir')
+                disp('Single session melodic output diretory not exists, exiting')
+            return
+       else   
+            outputDir = fullfile(paths.EPI.feat_out, configs.name.ica_aroma_folder);               
+            sentence = sprintf("python2.7 %s -out %s -f %s",...
+                paths.aroma, outputDir, configs.EPI.feat_subject_out);   
+            [mssg,result] = system(sentence, '-echo');
+                
+        % Move denoised filtered functional data to EPI directory
+        fprintf('Moving ICA-AROMA output (denoised_func_data_nonaggr.nii.gz) to EPI directory...')
+        fileIn = fullfile(outputDir, 'denoised_func_data_nonaggr.nii.gz');
+        fileOut = fullfile(paths.EPI.dir,'2_epi.nii.gz');
+        sentence = sprintf('cp %s %s', fileIn, fileOut);
+        [status, mssg] = system(sentence);
+        cprintf('*Blue','Finished\n')
+        
+        % Final checked
+            if ~exist(fullfile(paths.EPI.dir,'2_epi.nii.gz'),'file')
+                disp('ICA-AROMA not successfully run')
+                disp(mssg)
+            else
+             disp('ICA-AROMA completed')
+            end  
+       end
+    else
+        % Use existing ICA-AROMA output
+        disp('Use existing ICA-AROMA output.')
+        paths.EPI.aroma_dir = fullfile(paths.EPI.feat_out, configs.name.ica_aroma_folder);
+        
+        fileIn = fullfile(paths.EPI.aroma_dir, 'denoised_func_data_nonaggr.nii.gz');
+        fileOut = fullfile(paths.EPI.dir, '2_epi.nii.gz');
+        if ~exist(fileIn,'file')
+        	disp('denoised_func_data_nonaggr.nii.gz not found')
+            return
+        end  
+        copyfile(fileIn,fileOut);
+        
+        if ~exist(fullfile(paths.EPI.dir,'2_epi.nii.gz'),'file')
+        	disp('File not copied')
+        else
+            disp('ICA-AROMA completed')
+        end    
+        
+    end
+    sentence = sprintf('cp %s/mc/prefiltered_func_data_mcf.par %s/motion.txt', fullfile(paths.EPI.feat_out, sprintf('%s.ica',configs.EPI.subject)), paths.EPI.dir);
+    [~,result] = system(sentence);
+end
+
+
+
+
+%% Melodic Unwarping post-processing
+if flags.EPI.MelodicUnwarped == 1
+    disp('-----------------------')
+    disp('0. Merge Melodic Unwarpped Images')
+    disp('-----------------------')
+    paths.EPI.MelodicUnwarped = fullfile(paths.EPI.dir, configs.name.melodicUnwarpedFolder);
+    
+    if exist(paths.EPI.MelodicUnwarped, 'dir') ~= 7
+        error('MELODIC UNWARPED folder not exists')
+    end
+    
+    
+    % Merge unwarpped images
+    sentence = sprintf('%s/fslmerge -tr %s/0_epi_unwarped %s/uf*.nii.gz %f', paths.FSL, paths.EPI.dir, paths.EPI.MelodicUnwarped, params.TR);
+    [~,result] = system(sentence);
+    
+    if ~exist(fullfile(paths.EPI.dir,'0_epi_unwarped.nii.gz'),'file')
+        cprintf('err','0_epi_unwarped.nii.gz not created, exiting...')
+        return
+    end
+ 
+    
 end
 
 
@@ -412,7 +547,7 @@ if flags.EPI.SpinEchoUnwarp==1
 % SoL denominator is 3246.72 Hz
 % Echo Spacing = 0.000308
 % Echo Spacing Siemens PDF="0.000616"/GRAPPA="2" = 0.000308 
-% DWELLTIME="0.000308" sec
+% TIME="0.000308" sec
 % fugue -i f$STUDY$EXAM-$index2.nii --dwell=$DWELLTIME --loadfmap=$FMAPDIR/$fmap --unwarpdir=y- -u uf$STUDY$EXAM-$index2
 
                 fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
@@ -833,7 +968,7 @@ if flags.EPI.MotionRegressors == 1
     resting = MRIread(fullfile(paths.EPI.dir,'5_epi.nii.gz'));
     [sizeX,sizeY,sizeZ,numTimePoints] = size(resting.vol);
     if numTimePoints ~= params.nvols
-        warn('Number of time points is inconsistent. Exiting...')
+        warning('Number of time points is inconsistent. Exiting...')
         return
     end
  else
@@ -874,6 +1009,10 @@ if flags.EPI.MotionRegressors == 1
         load(fileMetrics); % motionMetric_fd
         if ~isempty(configs.EPI.FDth) && ~isnan(configs.EPI.FDth)
             scrubbing_fd = motionMetric_fd < configs.EPI.FDth;
+%             if nnz(~scrubbing_fd) >= 64
+%                 fprintf('-- identified %d FD outliers\n',nnz(~scrubbing_fd))
+%                 error('Too many FD outliers being scrubbed.')
+%             end
             fprintf('-- identified %d FD outliers\n',nnz(~scrubbing_fd))
         else
             error('configs.EPI.FDth is undefined!')
@@ -919,6 +1058,12 @@ if flags.EPI.MotionRegressors == 1
     [~,result] = system(sentence);
     
     SD = load(fileOut);
+    
+    % Zikai: when we are running multiple subjects, the configs.EPI.SDth
+    % should be clear every time before we initialize scrubbing vector.
+    
+    % Shouldn't be fixed inside this function
+    
     if isempty(configs.EPI.SDth) % if no hard threshold is defined for SD
         configs.EPI.SDth = prctile(SD,75) + (1.5*iqr(SD)); %% this follows default FSL criterion for outliers
     end
@@ -957,7 +1102,7 @@ if flags.EPI.MotionRegressors == 1
     CSFnumVoxels = nnz(volCSFvent.vol);
     CSFmask = logical(repmat(volCSFvent.vol,[1,1,1,numTimePoints]));
     CSFts = reshape(resting.vol(CSFmask),[CSFnumVoxels,numTimePoints]); %time series of CSF voxels
-    [CSFpca,CSFvar] = get_pca(CSFts',configs.EPI.numCompsPCA);
+    [CSFpca,CSFvar] = get_pca(CSFts',max(configs.EPI.numCompsPCA));
     CSFavg = mean(CSFts);
     CSFderiv = [0,diff(CSFavg)];
     save(fullfile(paths.EPI.epiGS,'6_dataCSF.mat'),'CSFmask','CSFts','CSFvar','CSFpca','CSFavg','CSFderiv');
@@ -967,7 +1112,7 @@ if flags.EPI.MotionRegressors == 1
     WMnumVoxels = nnz(volWM.vol);
     WMmask = logical(repmat(volWM.vol,[1,1,1,numTimePoints]));
     WMts= reshape(resting.vol(WMmask),[WMnumVoxels,numTimePoints]); %time series of WM voxels
-    [WMpca,WMvar] = get_pca(WMts',configs.EPI.numCompsPCA);
+    [WMpca,WMvar] = get_pca(WMts',max(configs.EPI.numCompsPCA));
     WMavg = mean(WMts);
     WMderiv = [0,diff(WMavg)];
     save(fullfile(paths.EPI.epiGS,'6_dataWM.mat'),'WMmask','WMts','WMvar','WMpca','WMavg','WMderiv');
@@ -977,7 +1122,7 @@ if flags.EPI.MotionRegressors == 1
     GMnumVoxels = nnz(volGM.vol);
     GMmask = logical(repmat(volGM.vol,[1,1,1,numTimePoints]));
     GMts= reshape(resting.vol(GMmask),[GMnumVoxels,numTimePoints]); %time series of WM voxels
-    [GMpca,GMvar] = get_pca(GMts',configs.EPI.numCompsPCA);
+    [GMpca,GMvar] = get_pca(GMts',max(configs.EPI.numCompsPCA));
     GMavg = mean(GMts);
     GMderiv = [0,diff(GMavg)]; %#ok<*NASGU>
     save(fullfile(paths.EPI.epiGS,'6_dataGM.mat'),'GMmask','GMts','GMvar','GMpca','GMavg','GMderiv');
@@ -986,7 +1131,7 @@ if flags.EPI.MotionRegressors == 1
     GSmask = logical(repmat(volBrain.vol,[1,1,1,numTimePoints]));
     GSnumVoxels = nnz(volBrain.vol);
     GSts = reshape(resting.vol(GSmask),[GSnumVoxels,numTimePoints]);
-    [GSpca,GSvar] = get_pca(GSts',configs.EPI.numCompsPCA);
+    [GSpca,GSvar] = get_pca(GSts',max(configs.EPI.numCompsPCA));
     GSavg = mean(GSts);
     GSderiv = [0,diff(GSavg)];
     save(fullfile(paths.EPI.epiGS,'6_dataGS.mat'),'GSmask','GSts','GSvar','GSpca','GSavg','GSderiv');
@@ -1027,7 +1172,7 @@ if flags.EPI.MotionRegressors == 1
         if flags.EPI.GS==1
             regressors = [motion,motion_deriv,... % R R' regressors
             GSavg',GSderiv',WMavg',WMderiv',CSFavg',CSFderiv']; % tissue related regressors
-        elseif falgs.EPI.GS==0
+        elseif flags.EPI.GS==0
             regressors = [motion,motion_deriv,... % R R' regressors
             WMavg',WMderiv',CSFavg',CSFderiv']; % tissue related regressors
         else
@@ -1081,7 +1226,7 @@ end
 if flags.EPI.BandPass==1
     if flags.EPI.GS==1
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
-    elseif lfags.EPI.GS==0
+    elseif flags.EPI.GS==0
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
     else
         warning('flags.EPI.GS not specified. Exiting...')
@@ -1128,6 +1273,15 @@ if flags.EPI.TissueRegressors==1
     disp('8. Tissue Regressors')
     disp('--------------------')
     
+    if flags.EPI.GS==1
+        paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
+    elseif flags.EPI.GS==0
+        paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
+    else
+        warning('flags.EPI.GS not specified. Exiting...')
+    end
+    
+    
     if exist(fullfile(paths.EPI.epiGS,'6_scrubbing.mat'),'file')
         load(fullfile(paths.EPI.epiGS,'6_scrubbing.mat'),'scrubbing')
     else
@@ -1137,17 +1291,11 @@ if flags.EPI.TissueRegressors==1
     %-------------------------------------------------------------------------%
     if (nnz(scrubbing)/length(scrubbing)) >= configs.EPI.scrubmaxfrac
         
-        if ~exist(fullfile(paths.EPI.epiGS,'PCA0'),'dir')
-            mkdir(paths.EPI.epiGS,'PCA0');
-        end
-        if ~exist(fullfile(paths.EPI.epiGS,'PCA1'),'dir')
-            mkdir(paths.EPI.epiGS,'PCA1');
-        end
-        if ~exist(fullfile(paths.EPI.epiGS,'PCA3'),'dir')
-            mkdir(paths.EPI.epiGS,'PCA3');
-        end
-        if ~exist(fullfile(paths.EPI.epiGS,'PCA5'),'dir')
-            mkdir(paths.EPI.epiGS,'PCA5');
+        for nPCA = configs.EPI.numCompsPCA
+            PCA_dir = sprintf('PCA%d', nPCA);
+            if ~exist(fullfile(paths.EPI.epiGS, PCA_dir),'dir')
+                mkdir(paths.EPI.epiGS, PCA_dir);
+            end
         end
         
         resting = MRIread(fullfile(paths.EPI.epiGS,'7_epi.nii.gz'));
@@ -1173,7 +1321,7 @@ if flags.EPI.TissueRegressors==1
         CSFmask = logical(repmat(volCSF.vol,[1,1,1,numTimePoints]));
         
         CSFts = reshape(resting.vol(CSFmask),[CSFnumVoxels,numTimePoints])'; %time series of CSF voxels
-        [CSFpca,CSFvar] = get_pca(CSFts,configs.EPI.numCompsPCA);
+        [CSFpca,CSFvar] = get_pca(CSFts,max(configs.EPI.numCompsPCA));
         CSFavg = mean(CSFts'); %#ok<*UDIM>
         save(fullfile(paths.EPI.epiGS,'8_dataCSF.mat'),'CSFmask','CSFts','CSFvar','CSFpca','CSFavg');
         %-------------------------------------------------------------------------%
@@ -1181,7 +1329,7 @@ if flags.EPI.TissueRegressors==1
         WMnumVoxels = nnz(volWM.vol);
         WMmask = logical(repmat(volWM.vol,[1,1,1,numTimePoints]));
         WMts= reshape(resting.vol(WMmask),[WMnumVoxels,numTimePoints])'; %time series of WM voxels
-        [WMpca,WMvar] = get_pca(WMts,configs.EPI.numCompsPCA);
+        [WMpca,WMvar] = get_pca(WMts,max(configs.EPI.numCompsPCA));
         WMavg = mean(WMts');
         save(fullfile(paths.EPI.epiGS,'8_dataWM.mat'),'WMmask','WMts','WMvar','WMpca','WMavg');
         %-------------------------------------------------------------------------%
@@ -1189,7 +1337,7 @@ if flags.EPI.TissueRegressors==1
         GMnumVoxels = nnz(volGM.vol);
         GMmask = logical(repmat(volGM.vol,[1,1,1,numTimePoints]));
         GMts= reshape(resting.vol(GMmask),[GMnumVoxels,numTimePoints])'; %time series of WM voxels
-        [GMpca,GMvar] = get_pca(GMts,configs.EPI.numCompsPCA);
+        [GMpca,GMvar] = get_pca(GMts,max(configs.EPI.numCompsPCA));
         GMavg = mean(GMts');
         save(fullfile(paths.EPI.epiGS,'8_dataGM.mat'),'GMmask','GMts','GMvar','GMpca','GMavg');
         %-------------------------------------------------------------------------%
@@ -1197,68 +1345,118 @@ if flags.EPI.TissueRegressors==1
         GSnumVoxels = nnz(volGS.vol);
         GSmask = logical(repmat(volGS.vol,[1,1,1,numTimePoints]));
         GSts= reshape(resting.vol(GSmask),[GSnumVoxels,numTimePoints])'; %time series of WM voxels
-        [GSpca,GSvar] = get_pca(GSts,configs.EPI.numCompsPCA);
+        [GSpca,GSvar] = get_pca(GSts,max(configs.EPI.numCompsPCA));
         GSavg = mean(GSts');
         save(fullfile(paths.EPI.epiGS,'8_dataGS.mat'),'GSmask','GSts','GSvar','GSpca','GSavg');
         %% -----------------------------------------------------------------------%
         % PCA0
-        fileOut = fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz');
-        MRIwrite(resting,fileOut,'double');
-        
-        resting_vol_nopca = resting.vol;
+        if ismember(0, configs.EPI.numCompsPCA)
+            fileOut = fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
+
+            resting_vol_nopca = resting.vol;
+        end
         %-------------------------------------------------------------------------%
         % PCA1 regressout tissue regressors
-        if flags.EPI.GS==1
-            regressors = [GSpca(:,1:1),WMpca(:,1:1),CSFpca(:,1:1),ones(numTimePoints,1)];
-        elseif flags.EPI.GS==0
-            regressors = [WMpca(:,1:1),CSFpca(:,1:1),ones(numTimePoints,1)];
-        else
-            warning('flags.EPI.GS not specified. Exiting...')
+        if ismember(1, configs.EPI.numCompsPCA)
+            if flags.EPI.GS==1
+                regressors = [GSpca(:,1:1),WMpca(:,1:1),CSFpca(:,1:1),ones(numTimePoints,1)];
+            elseif flags.EPI.GS==0
+                regressors = [WMpca(:,1:1),CSFpca(:,1:1),ones(numTimePoints,1)];
+            else
+                warning('flags.EPI.GS not specified. Exiting...')
+            end
+            resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
+            fileOut = fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
         end
-        resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
-        fileOut = fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz');
-        MRIwrite(resting,fileOut,'double');
+        
+        %-------------------------------------------------------------------------%
+        % PCA2 regressout tissue regressors
+        if ismember(2, configs.EPI.numCompsPCA)
+            if flags.EPI.GS==1
+                regressors = [GSpca(:,1:2),WMpca(:,1:2),CSFpca(:,1:2),ones(numTimePoints,1)];
+            elseif flags.EPI.GS==0
+                regressors = [WMpca(:,1:2),CSFpca(:,1:2),ones(numTimePoints,1)];
+            else
+                warning('flags.EPI.GS not specified. Exiting...')
+            end
+            resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
+            fileOut = fullfile(paths.EPI.epiGS,'PCA2','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
+        end
+        
         %-------------------------------------------------------------------------%
         % PCA3 regressout tissue regressors
-        if flags.EPI.GS==1
-            regressors = [GSpca(:,1:3),WMpca(:,1:3),CSFpca(:,1:3),ones(numTimePoints,1)];
-        elseif flags.EPI.GS==0
-            regressors = [WMpca(:,1:3),CSFpca(:,1:3),ones(numTimePoints,1)];
-        else
-            warning('flags.EPI.GS not specified. Exiting...')
+        if ismember(3, configs.EPI.numCompsPCA)
+            if flags.EPI.GS==1
+                regressors = [GSpca(:,1:3),WMpca(:,1:3),CSFpca(:,1:3),ones(numTimePoints,1)];
+            elseif flags.EPI.GS==0
+                regressors = [WMpca(:,1:3),CSFpca(:,1:3),ones(numTimePoints,1)];
+            else
+                warning('flags.EPI.GS not specified. Exiting...')
+            end
+            resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
+            fileOut = fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
         end
-        resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
-        fileOut = fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz');
-        MRIwrite(resting,fileOut,'double');
+        
+        %-------------------------------------------------------------------------%
+        % PCA4 regressout tissue regressors
+        if ismember(4, configs.EPI.numCompsPCA)
+            if flags.EPI.GS==1
+                regressors = [GSpca(:,1:4),WMpca(:,1:4),CSFpca(:,1:4),ones(numTimePoints,1)];
+            elseif flags.EPI.GS==0
+                regressors = [WMpca(:,1:4),CSFpca(:,1:4),ones(numTimePoints,1)];
+            else
+                warning('flags.EPI.GS not specified. Exiting...')
+            end
+            resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
+            fileOut = fullfile(paths.EPI.epiGS,'PCA4','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
+        end
+        
         %-------------------------------------------------------------------------%
         % PCA5 regressout tissue regressors
-        if flags.EPI.GS==1
-            regressors = [GSpca(:,1:5),WMpca(:,1:5),CSFpca(:,1:5),ones(numTimePoints,1)];
-        elseif flags.EPI.GS==0
-            regressors = [WMpca(:,1:5),CSFpca(:,1:5),ones(numTimePoints,1)];
-        else
-            warning('flags.EPI.GS not specified. Exiting...')
+        if ismember(5, configs.EPI.numCompsPCA)
+            if flags.EPI.GS==1
+                regressors = [GSpca(:,1:5),WMpca(:,1:5),CSFpca(:,1:5),ones(numTimePoints,1)];
+            elseif flags.EPI.GS==0
+                regressors = [WMpca(:,1:5),CSFpca(:,1:5),ones(numTimePoints,1)];
+            else
+                warning('flags.EPI.GS not specified. Exiting...')
+            end
+            resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
+            fileOut = fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz');
+            MRIwrite(resting,fileOut,'double');
         end
-        resting.vol = apply_regressors(resting_vol_nopca,volBrain.vol,regressors);
-        fileOut = fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz');
-        MRIwrite(resting,fileOut,'double');
     else
-        if exist(fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz'),'file')
+        if ismember(0, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz'),'file')
             delete(fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz'));
             sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
         end
-        if exist(fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz'),'file')
+        if ismember(1, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz'),'file')
             delete(fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz'));
             sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
         end
-        if exist(fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz'),'file')
+        if ismember(2, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA2','8_epi.nii.gz'),'file')
+            delete(fullfile(paths.EPI.epiGS,'PCA2','8_epi.nii.gz'));
+            sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
+                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
+        end
+        if ismember(3, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz'),'file')
             delete(fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz'));
             sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
         end
-        if exist(fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz'),'file')
+        if ismember(4, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA4','8_epi.nii.gz'),'file')
+            delete(fullfile(paths.EPI.epiGS,'PCA4','8_epi.nii.gz'));
+            sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
+                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
+        end
+        if ismember(5, configs.EPI.numCompsPCA) && exist(fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz'),'file')
             delete(fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz'));
             sprintf('Tissue Regressors for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
@@ -1274,7 +1472,7 @@ if flags.EPI.SpatialSmooth == 1
     
     if flags.EPI.GS==1
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
-    elseif lfags.EPI.GS==0
+    elseif flags.EPI.GS==0
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
     else
         warning('flags.EPI.GS not specified. Exiting...')
@@ -1290,66 +1488,33 @@ if flags.EPI.SpatialSmooth == 1
     if (nnz(scrubbing)/length(scrubbing)) >= configs.EPI.scrubmaxfrac    
         if (configs.EPI.fwhm>0)
             sigma = configs.EPI.fwhm/(sqrt(8*log(2)));
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA0','9_epi.nii.gz');
-            sentence = sprintf('%s/fslmaths %s -kernel gauss %0.4f -fmean %s',paths.FSL,fileIn,sigma,fileOut);
-            [~,result] = system(sentence);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA1','9_epi.nii.gz');
-            sentence = sprintf('%s/fslmaths %s -kernel gauss %0.4f -fmean %s',paths.FSL,fileIn,sigma,fileOut);
-            [~,result] = system(sentence);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA3','9_epi.nii.gz');
-            sentence = sprintf('%s/fslmaths %s -kernel gauss %0.4f -fmean %s',paths.FSL,fileIn,sigma,fileOut);
-            [~,result] = system(sentence);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz');
-            sentence = sprintf('%s/fslmaths %s -kernel gauss %0.4f -fmean %s',paths.FSL,fileIn,sigma,fileOut);
-            [~,result] = system(sentence);
+            
+            for nPCA = configs.EPI.numCompsPCA
+                PCA_dir = sprintf('PCA%d', nPCA);
+                fileIn = fullfile(paths.EPI.epiGS,PCA_dir,'8_epi.nii.gz');
+                fileOut = fullfile(paths.EPI.epiGS,PCA_dir,'9_epi.nii.gz');
+                sentence = sprintf('%s/fslmaths %s -kernel gauss %0.4f -fmean %s',paths.FSL,fileIn,sigma,fileOut);
+                [~,result] = system(sentence);
+            end
 %-------------------------------------------------------------------------%
         else
-            fileIn = fullfile(paths.EPI.epiGS,'PCA0','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA0','9_epi.nii.gz');
-            copyfile(fileIn,fileOut);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA1','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA1','9_epi.nii.gz');
-            copyfile(fileIn,fileOut);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA3','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA3','9_epi.nii.gz');
-            copyfile(fileIn,fileOut);
-
-            fileIn = fullfile(paths.EPI.epiGS,'PCA5','8_epi.nii.gz');
-            fileOut = fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz');
-            copyfile(fileIn,fileOut);
+            for nPCA = configs.EPI.numCompsPCA
+                PCA_dir = sprintf('PCA%d', nPCA);
+                fileIn = fullfile(paths.EPI.epiGS,PCA_dir,'8_epi.nii.gz');
+                fileOut = fullfile(paths.EPI.epiGS,PCA_dir,'9_epi.nii.gz');
+                copyfile(fileIn,fileOut);   
+            end
         end
 %-------------------------------------------------------------------------%
     else
-        if exist(fullfile(paths.EPI.epiGS,'PCA0','9_epi.nii.gz'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA0','9_epi.nii.gz'));
-            sprintf('Smoothing for %s \n not done due to > %s percent of volumes being scrubbed',...
+        for nPCA = configs.EPI.numCompsPCA
+            PCA_dir = sprintf('PCA%d', nPCA);
+            if exist(fullfile(paths.EPI.epiGS,PCA_dir,'9_epi.nii.gz'),'file')
+                delete(fullfile(paths.EPI.epiGS,PCA_dir,'9_epi.nii.gz'));
+                sprintf('Smoothing for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));            
-        end 
-        if exist(fullfile(paths.EPI.epiGS,'PCA1','9_epi.nii.gz'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA1','9_epi.nii.gz'));
-            sprintf('Smoothing for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));                      
-        end  
-        if exist(fullfile(paths.EPI.epiGS,'PCA3','9_epi.nii.gz'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA3','9_epi.nii.gz'));
-            sprintf('Smoothing for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));                        
-        end  
-        if exist(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA5','9_epi.nii.gz'));
-            sprintf('Smoothing for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));                        
-        end  
+            end 
+        end
     end
 end
 
@@ -1361,7 +1526,7 @@ if flags.EPI.ROIs==1
 
     if flags.EPI.GS==1
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
-    elseif lfags.EPI.GS==0
+    elseif flags.EPI.GS==0
         paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
     else
         warning('flags.EPI.GS not specified. Exiting...')
@@ -1375,8 +1540,11 @@ if flags.EPI.ROIs==1
     end
 %-------------------------------------------------------------------------%
     if (nnz(scrubbing)/length(scrubbing)) >= configs.EPI.scrubmaxfrac    
-        regConfigs = {'PCA0','PCA1','PCA3','PCA5'};
-
+        regConfigs = {};
+        for i = 1:length(configs.EPI.numCompsPCA)
+            regConfigs{i} = sprintf('PCA%d', configs.EPI.numCompsPCA(i));
+        end
+            
         volGM = MRIread(fullfile(paths.EPI.dir,'rT1_GM_mask.nii.gz')); volGM = volGM.vol;
         volWM = MRIread(fullfile(paths.EPI.dir,'rT1_WM_mask_eroded.nii.gz')); volWM = volWM.vol;
         volCSF = MRIread(fullfile(paths.EPI.dir,'rT1_CSF_mask_eroded.nii.gz')); volCSF = volCSF.vol;
@@ -1429,25 +1597,13 @@ if flags.EPI.ROIs==1
         end
 %-------------------------------------------------------------------------%        
     else
-        if exist(fullfile(paths.EPI.epiGS,'PCA0','10_epi_ROIs.mat'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA0','10_epi_ROIs.mat'));
-            sprintf('ROIs for %s \n not done due to > %s percent of volumes being scrubbed',...
+        for nPCA = configs.EPI.numCompsPCA
+            PCA_dir = sprintf('PCA%d', nPCA);
+            if exist(fullfile(paths.EPI.epiGS,PCA_dir,'10_epi_ROIs.mat'),'file')
+                delete(fullfile(paths.EPI.epiGS,PCA_dir,'10_epi_ROIs.mat'));
+                sprintf('ROIs for %s \n not done due to > %s percent of volumes being scrubbed',...
                 paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
+            end 
         end 
-        if exist(fullfile(paths.EPI.epiGS,'PCA1','10_epi_ROIs.mat'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA1','10_epi_ROIs.mat'));
-            sprintf('ROIs for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
-        end  
-        if exist(fullfile(paths.EPI.epiGS,'PCA3','10_epi_ROIs.mat'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA3','10_epi_ROIs.mat'));
-            sprintf('ROIs for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
-        end  
-        if exist(fullfile(paths.EPI.epiGS,'PCA5','10_epi_ROIs.mat'),'file')
-            delete(fullfile(paths.EPI.epiGS,'PCA5','10_epi_ROIs.mat'));
-            sprintf('ROIs for %s \n not done due to > %s percent of volumes being scrubbed',...
-                paths.subject,num2str(configs.EPI.scrubmaxfrac*100));
-        end     
     end
 end
