@@ -647,7 +647,7 @@ fprintf(fid,'\n');
 % Output components
 fsf_str = sprintf([ ...
        '\n# Output components',...   
-       '\nset fmri(dim) 1']);
+       '\nset fmri(dim) %d'], configs.EPI.nComponents);
 fprintf(fid,'%s', fsf_str);
 fprintf(fid,'\n');
 

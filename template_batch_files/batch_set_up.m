@@ -150,6 +150,10 @@ flags.EPI.ICA_AROMA = 1; % ICA AROMA for motion correction, required single sess
     flags.EPI.feat = 0; % single session melodic, required for ICA-AROMA, if done, this step can be skipped
         configs.EPI.featVersion = '3.15'; % version of feat, don't change unless the version of feat is changed
         configs.EPI.watcher = 1; % whether the featWatcher should be turn on
+        configs.EPI.nComponents = 1;   % * Number of components output by Melodic, if set to 1 then the number of components
+                                       %   automatically generated until
+                                       %   converging. Otherwise a fixed
+                                       %   number of output will be set.
         configs.EPI.pre_fwhm = 6; % Melodic pre-processing: Full Width at Half Maximum of the Gaussian kernel
         configs.EPI.brainThres = 5; % Brain/background threshold, in percentage(%).
         configs.EPI.B0Unwarp = 0; % B0 field map unwarping
