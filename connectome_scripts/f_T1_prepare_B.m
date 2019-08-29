@@ -220,7 +220,7 @@ if flags.T1.parc==1
         % 07.26.2017 EJC Dilate the final GM parcellations. 
         % NOTE: These are different from those removed above, because they are
         % true single modal dilations. They will be used by
-        % f_functiona_connectivity to bring parcellations into epi space.
+        % f_functional_connectivity to bring parcellations into epi space.
         fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
         sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut4);
         [~,result]=system(sentence);
@@ -291,8 +291,10 @@ if flags.T1.parc==1
         [~,result]=system(sentence);
         %-------------------------------------------------------------------------%
         % 07.25.2017 EJC Remove intermediates of the clean-up.
-        sentence = sprintf('rm %s*;rm %s*;rm %s*',FileRoot,FileOut1,FileOut2);
+        sentence = sprintf('rm %s*;rm %s*;rm %s*;',FileRoot,FileOut1,FileOut2);
         [~,result]=system(sentence);
+        sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
+        [~,result]=system(sentence); 
     end
     end
 end
