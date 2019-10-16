@@ -1,4 +1,4 @@
-function run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)
+function run_connectivity_pipeline(sssu,bst,subjectList)
 %                       RUN_CONNECTIVITY_PIPELINE
 % Executes processing of anatomical, functional, and diffusion MRI data as
 % defined in the set_up scripts:
@@ -25,19 +25,19 @@ function run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList
 %
 %%
 % Set path/name to the batch set_up script
-run(batch_set_up);
+run(bst);
 % Set path/name to the system and sample set_up script
-run(system_sample_set_up);
+run(sssu);
 % save name in paths structure for reference
-paths.batch=batch_set_up;
+paths.batch=bst;
 % save name in paths structure for reference
-paths.setup=system_sample_set_up;
+paths.setup=sssu;
 
 %%
 if flags.global.T1_prepare_A==1
     % Run T1_A on all subjects in subjectList
 for i=1:length(subjectList)
-    run(batch_set_up) % initialize default configs
+    run(bst) % initialize default configs
     paths.subject = fullfile(paths.data,subjectList(i).name);
     % check that subject path and T1 directory exist
     if exist(paths.subject,'dir') && exist(fullfile(paths.subject,configs.name.T1),'dir') %#ok<*NODEF>
@@ -58,10 +58,12 @@ for i=1:length(subjectList)
                 configFile=fullfile(paths.subject,sprintf('configs_T1_A_%s_run%d.mat',datestr(now,'yyyymmdd'),count+1));
             end
             save(configFile,'-struct','configs','T1');
-        else
+        else 
+            disp(subjectList(i).name)
             warning('T1 directory is empty; skipping subject')
         end
     else
+        disp(subjectList(i).name)
         warning('Either subject or contained T1 directory does not exit; skipping subject')
     end
     diary off
@@ -72,7 +74,7 @@ end
 if flags.global.T1_prepare_B==1
     % Run T1_B on all subjects in subjectList
 for i=1:length(subjectList)
-    run(batch_set_up) % initialize default configs
+    run(bst) % initialize default configs
     paths.subject = fullfile(paths.data,subjectList(i).name);
     % check that subject path and T1 directory exist
     paths.T1.dir = fullfile(paths.subject,configs.name.T1);
@@ -92,6 +94,7 @@ for i=1:length(subjectList)
         end
         save(configFile,'-struct','configs','T1');
     else
+        disp(subjectList(i).name)
         warning('Either subject or contained T1 directory does not exit; skipping subject')
     end
     diary off
@@ -118,7 +121,7 @@ for i=1:length(subjectList)
             configs.EPI.sessions=epiList.name;
             % For each session under this subject    
             for j=1:length(epiList)
-                run(batch_set_up) % initialize default configs
+                run(bst) % initialize default configs
             % Operating on the scans set in configs
                 if j >= configs.EPI.epiMin && j <= configs.EPI.epiMax
                     paths.EPI.dir=fullfile(paths.subject,epiList(j).name);
@@ -128,7 +131,7 @@ for i=1:length(subjectList)
                     fprintf('EPI series: %s\n',epiList(j).name)
                     disp('---------------------------------')
                     % run fMRI processing
-                    [paths,flags,configs,parcs]=f_functional_connectivity(paths,flags,configs,parcs);
+                    [paths,flags,configs,parcs]=f_functional_connectivity(paths,flags,configs,parcs,params);
                     % save the cofiguration variables for this run
                     configFile=fullfile(paths.subject,sprintf('configs_%s_A_%s.mat',epiList(j).name,datestr(now,'yyyymmdd')));
                     if exist(configFile,'file')
@@ -144,6 +147,7 @@ for i=1:length(subjectList)
             warning('epiList is empty or does not exit. Check consistency of naming convention.')
         end
     else
+        disp(subjectList(i).name)
         warning('Either subject or contained T1 directory does not exit; skipping subject')
     end
     diary off
@@ -154,7 +158,7 @@ end
 if flags.global.fMRI_B==1   
     % Generate figures for all subjects in subjectList
     for i=1:length(subjectList)
-        run(batch_set_up) % initialize default configs
+        run(bst) % initialize default configs
         paths.subject = fullfile(paths.data,subjectList(i).name);
         paths.T1.dir=fullfile(paths.subject,configs.name.T1);
         % check that subject path and T1 directory exist
@@ -191,7 +195,7 @@ if flags.global.fMRI_B==1
                             fprintf('EPI series: %s\n',epiList(j).name)
                             disp('------------------------')
                             % Generate the figures
-                            [paths,flags,configs,parcs]=f_evaluateFC(paths,flags,configs,parcs,subjectinfo);
+                            [paths,flags,configs,parcs]=f_evaluateFC_WIP(paths,flags,configs,parcs,subjectinfo);
                             close all;
                             % save the cofiguration variables for this run
                             configFile=fullfile(paths.subject,sprintf('configs_%s_B_%s.mat',epiList(j).name,datestr(now,'yyyymmdd')));
@@ -202,15 +206,18 @@ if flags.global.fMRI_B==1
                             end
                             save(configFile,'-struct','configs','EPI');
                         else
+                            disp(subjectList(i).name)
                             warning('Either GSReg_yes or _no directory does not exit; skipping subject')
                         end
                         diary off
                     end
                 end
             else
+                disp(subjectList(i).name)
                 warning('No %s containing session names found. Check for consistency of nomenclature',configs.name.epiFolder)
             end
         else
+            disp(subjectList(i).name)
             warning('Either path to subject or %s not found',configs.name.epiFolder)
         end
     end
@@ -219,7 +226,7 @@ end
 %%
 if flags.global.DWI_A==1
     for i=1:length(subjectList) % For each subject
-        run(batch_set_up) % initialize default configs
+        run(bst) % initialize default configs
         % Set up environment
         paths.subject = fullfile(paths.data,subjectList(i).name);
         paths.T1.dir = fullfile(paths.subject,configs.name.T1);
@@ -244,6 +251,7 @@ if flags.global.DWI_A==1
                 end
             save(configFile,'-struct','configs','DWI');
         else
+            disp(subjectList(i).name)
             warning('Subject DWI directory does not exit; skipping subject')
         end
         diary off
@@ -253,7 +261,7 @@ end
 %%
 if flags.global.DWI_B==1
     for i=1:length(subjectList) % For each subject
-        run(batch_set_up) % initialize default configs
+        run(bst) % initialize default configs
         % Set up environment
         paths.subject = fullfile(paths.data,subjectList(i).name);
         paths.T1.dir = fullfile(paths.subject,configs.name.T1);
@@ -274,6 +282,7 @@ if flags.global.DWI_B==1
             end
             save(configFile,'-struct','configs','DWI');
         else
+            disp(subjectList(i).name)
             warning('Subject DWI directory does not exit; skipping subject')
         end
         diary off
@@ -283,7 +292,7 @@ end
 %%
 if flags.global.DWI_C==1
     for i=1:length(subjectList) % For each subject
-        run(batch_set_up) % initialize default configs
+        run(bst) % initialize default configs
         % Set up environment
         paths.subject = fullfile(paths.data,subjectList(i).name);
         paths.T1.dir = fullfile(paths.subject,configs.name.T1);
@@ -304,6 +313,7 @@ if flags.global.DWI_C==1
             end
             save(configFile,'-struct','configs','DWI');
         else
+            disp(subjectList(i).name)
             warning('Subject DWI directory does not exit; skipping subject')
         end
         diary off

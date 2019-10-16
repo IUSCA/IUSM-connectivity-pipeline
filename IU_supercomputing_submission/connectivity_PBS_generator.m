@@ -46,10 +46,10 @@ numPBS = floor(numsubjects/14); % Grabs number of loops needed to generate PBSsc
 % Generate PBS scripts and wrappers for majority of subjects
 if numPBS+1>1
     for i=1:numPBS
-        subjectsforloop(1:14) = subjectfolders((i*14-14+1):i*14);
+        subjectsforloop(1:7) = subjectfolders((i*7-7+1):i*7);
         fidpbs = fopen([batch_path '/PBSconnectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name],'w');
         fprintf(fidpbs, '#!/bin/bash\n');
-        fprintf(fidpbs, '#PBS -l nodes=1:ppn=16,vmem=32gb,walltime=12:00:00\n');
+        fprintf(fidpbs, '#PBS -l nodes=1:ppn=8,vmem=64gb,walltime=12:00:00\n');
         fprintf(fidpbs, ['#PBS -M ' email '\n']);
         fprintf(fidpbs, '#PBS -m abe\n');
         fprintf(fidpbs, ['#PBS -N connectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name '\n']);
@@ -69,13 +69,11 @@ if numPBS+1>1
         fprintf(fidpbs, 'module load camino-trackvis\n\n');
         fprintf(fidpbs, ['cd ' batch_path '\n\n']);        
         fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(7).name ' &\n\n']);
-        fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsforloop(8).name 'to' subjectsforloop(end).name ' &\n\n']);
         fprintf(fidpbs, 'wait\n');
         fclose(fidpbs);
         fidwrap1 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(7).name '.m'],'w');
-        fidwrap2 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsforloop(8).name 'to' subjectsforloop(14).name '.m'],'w');
         
-        for j=1:14
+        for j=1:7
              if j<=7
                  
                     fprintf(fidwrap1, ['subjectList(' num2str(j) ',1).name = ''' subjectsforloop(j).name ''';\n']);
@@ -83,37 +81,25 @@ if numPBS+1>1
                 fprintf(fidwrap1, ['batch_set_up = ''' batch_set_up ''';\n']);
                 fprintf(fidwrap1, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
                 fprintf(fidwrap1, ['addpath ' pipeline_path ';\n']);
-                fprintf(fidwrap1, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
-                end
-             else
-                
-                    fprintf(fidwrap2, ['subjectList(' num2str(j-7) ',1).name = ''' subjectsforloop(j).name ''';\n']);
-                if j==14
-                fprintf(fidwrap2, ['batch_set_up = ''' batch_set_up ''';\n']);
-                fprintf(fidwrap2, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
-                fprintf(fidwrap2, ['addpath ' pipeline_path ';\n']);
-                fprintf(fidwrap2, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
+                fprintf(fidwrap1, 'run_connectivity_pipeline_WIP(system_sample_set_up,batch_set_up,subjectList)\n\n');
                 end
             end
         end
         
         fprintf(fidwrap1, 'quit\n');
         fclose(fidwrap1);
-        fprintf(fidwrap2, 'quit\n');
-        fclose(fidwrap2);
     end
 end
 
 %% 
 %  Make PBS script and wrappers for remaining subjects if needed
 
-subjectsremain = subjectfolders(numPBS*14+1:end); % grabs last subjects
+subjectsremain = subjectfolders(numPBS*7+1:end); % grabs last subjects
 numsubjectsremain = length(subjectsremain); % finds number of last subjects
-thresh = ceil(numsubjectsremain/2); % finds how many subjects to put in each wrapper
 if numsubjectsremain>0
     fidpbs = fopen([batch_path '/PBSconnectome_' subjectsremain(1).name 'to' subjectsremain(end).name],'w');
     fprintf(fidpbs, '#!/bin/bash\n');
-    fprintf(fidpbs, '#PBS -l nodes=1:ppn=16,vmem=32gb,walltime=12:00:00\n');
+    fprintf(fidpbs, '#PBS -l nodes=1:ppn=8,vmem=64gb,walltime=12:00:00\n');
     fprintf(fidpbs, ['#PBS -M ' email '\n']);
     fprintf(fidpbs, '#PBS -m abe\n');
     fprintf(fidpbs, ['#PBS -N connectome_' subjectsremain(1).name 'to' subjectsremain(end).name '\n']);
@@ -132,41 +118,25 @@ if numsubjectsremain>0
     fprintf(fidpbs, 'module load ants\n');
     fprintf(fidpbs, 'module load camino-trackvis\n\n');
     fprintf(fidpbs, ['cd ' batch_path '\n\n']);
-    fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsremain(1).name 'to' subjectsremain(thresh).name ' &\n\n']);
-    fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsremain(thresh+1).name 'to' subjectsremain(end).name ' &\n\n']);
+    fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsremain(1).name 'to' subjectsremain(end).name ' &\n\n']);
     fprintf(fidpbs, 'wait\n');
     fclose(fidpbs);
-    fidwrap1 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsremain(1).name 'to' subjectsremain(thresh).name '.m'],'w');
-    if numsubjectsremain>thresh    
-        fidwrap2 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsremain(thresh+1).name 'to' subjectsremain(end).name '.m'],'w');
-    end
+    fidwrap1 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsremain(1).name 'to' subjectsremain(numsubjectsremain).name '.m'],'w');
+
     for i=1:numsubjectsremain
-        if i<=thresh
+        if i<=numsubjectsremain
             
-                fprintf(fidwrap1, ['subjectList(' num2str(i) ',1).name = ''' subjectsforloop(i).name ''';\n']);
-            if i==thresh
+                fprintf(fidwrap1, ['subjectList(' num2str(i) ',1).name = ''' subjectsremain(i).name ''';\n']);
+            if i==numsubjectsremain
             fprintf(fidwrap1, ['batch_set_up = ''' batch_set_up ''';\n']);
             fprintf(fidwrap1, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
             fprintf(fidwrap1, ['addpath ' pipeline_path ';\n']);
-            fprintf(fidwrap1, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
-            end
-        elseif numsubjectsremain>thresh
-            
-                fprintf(fidwrap2, ['subjectList(' num2str(i-thresh) ',1).name = ''' subjectsforloop(i).name ''';\n']);
-            if i==numsubjectsremain
-            fprintf(fidwrap2, ['batch_set_up = ''' batch_set_up ''';\n']);
-            fprintf(fidwrap2, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
-            fprintf(fidwrap2, ['addpath ' pipeline_path ';\n']);
-            fprintf(fidwrap2, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
+            fprintf(fidwrap1, 'run_connectivity_pipeline_WIP(system_sample_set_up,batch_set_up,subjectList)\n\n');
             end
         end
     end
     fprintf(fidwrap1, 'quit\n');
     fclose(fidwrap1);
-    if numsubjectsremain>thresh
-        fprintf(fidwrap2, 'quit\n');
-        fclose(fidwrap2);
-    end
 end
 
 %%

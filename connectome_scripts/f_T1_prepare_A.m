@@ -33,7 +33,7 @@ if flags.T1.dcm2niix==1
     % Convert dicom to nifti.
     disp('Converting Dicom-to-nifti')
     fileLog = sprintf('%s/dcm2niix.log',paths.T1.dir);
-    sentence = sprintf('%s/dcm2niix -f %s -o %s -v y -x y -b y %s > %s',paths.MRIcroGL,configs.name.T1,paths.T1.dir,paths.T1.dcm,fileLog);
+    sentence = sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y -b y %s > %s',paths.scripts,configs.name.T1,paths.T1.dir,paths.T1.dcm,fileLog);
     [status,result] = system(sentence);
     if status == 0
         sentence = sprintf('mv %s/%s.nii %s/%s_orig.nii',paths.T1.dir,configs.name.T1,paths.T1.dir,configs.name.T1);
@@ -136,21 +136,37 @@ if flags.T1.bet==1
     fileIn = fullfile(paths.T1.dir,'T1_fov_denoised.nii');
 %----------    fileOut = fullfile(paths.T1.dir,'T1_brain.nii.gz');
     fileOutroot = fullfile(paths.T1.dir,'T1_');
-    fileTemplate = fullfile(paths.MNIparcs,'MICCAI2012-Multi-Atlas-Challenge-Data/T_template0.nii.gz');
-    fileProbability = fullfile(paths.MNIparcs,'MICCAI2012-Multi-Atlas-Challenge-Data/T_template0_BrainCerebellumProbabilityMask.nii.gz');
+    switch configs.T1.antsTemplate
+        case 'MICCAI'
+            fileTemplate = fullfile(paths.scripts,'templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0.nii.gz');
+            fileProbability = fullfile(paths.scripts,'templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0_BrainCerebellumProbabilityMask.nii.gz');
+            fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
+        case 'NKI'
+            fileTemplate = fullfile(paths.scripts,'templates/brainmask_templates/NKI/T_template.nii.gz');
+            fileProbability = fullfile(paths.scripts,'templates/brainmask_templates/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz');
+            fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
+        case 'bet'
+            fprintf('Using bet -f and -g inputs to perform fsl bet with -B option\n')
+        otherwise
+            fprintf('Unknown brain mask template selection: %s. Exiting...\n',configs.T1.antsTemplate)
+    end   
+            
     if exist(fileIn, 'file')
-%----------        % Brain extraction -f -g parameters set in the batch file.
-%----------        sentence = sprintf('%s/bet %s %s -B -m -f %.4f -g %.4f',...
-%----------            paths.FSL,fileIn,fileOut,configs.T1.betF,configs.T1.betG);
-%----------        [status,result] = system(sentence);
-%--------------------
         fileIn2 = fullfile(paths.T1.dir,'T1_brain_mask.nii.gz');
-        % testing ants brain extraction %
-        ANTSlog = fullfile(paths.T1.dir,'ants_bet.log');
-        sentence = sprintf('%s/antsBrainExtraction.sh -d 3 -a %s -e %s -m %s -o %s > %s',...
-            paths.ANTS,fileIn,fileTemplate,fileProbability,fileOutroot,ANTSlog);
-        [status,result]=system(sentence);
-        [status,result]=system(sprintf('mv %s/T1_BrainExtractionMask.nii.gz %s',paths.T1.dir,fileIn2));
+        fileOut = fullfile(paths.T1.dir,'T1_brain.nii.gz');
+        if strcmp(configs.T1.antsTemplate,'bet') == 1
+            sentence = sprintf('%s/bet %s %s -B -m -f %.4f -g %.4f',...
+                paths.FSL,fileIn,fileOut,configs.T1.betF,configs.T1.betG);
+            [status,result] = system(sentence);
+        else
+            % ANTS brain extraction
+            ANTSlog = fullfile(paths.T1.dir,'ants_bet.log');
+            sentence = sprintf('%s/antsBrainExtraction.sh -d 3 -a %s -e %s -m %s -o %s > %s',...
+                paths.ANTS,fileIn,fileTemplate,fileProbability,fileOutroot,ANTSlog);
+            [status,result]=system(sentence);
+            [status,result]=system(sprintf('mv %s/T1_BrainExtractionMask.nii.gz %s',paths.T1.dir,fileIn2));
+            [status,result]=system(sprintf('mv %s/T1_BrainExtractionBrain.nii.gz %s',paths.T1.dir,fileOut));
+        end
         fileOut2 = fullfile(paths.T1.dir,'T1_brain_mask_filled.nii.gz');
         if status == 0 && exist(fileIn2, 'file')
             % Fill holes in the brain mask.

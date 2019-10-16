@@ -295,6 +295,25 @@ if flags.T1.parc==1
         [~,result]=system(sentence);
         sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
         [~,result]=system(sentence); 
+        
+        %% add subcortical fsl parcellation to cortical parcellations
+        if configs.T1.addsubcort == 1
+            fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+            volParc=MRIread(FileIn);
+            MaxID = max(max(max(volParc.vol)));
+            volSubcort=MRIread(fileSubcort);
+            volSubcort.vol(volSubcort.vol==16)=0;
+            ids=unique(volSubcort.vol);
+            for s=1:length(ids)
+                if ids(s)>0
+                    volSubcort.vol(volSubcort.vol==ids(s))=MaxID+(s-1);
+                end
+            end
+            subcorMask=volSubcort.vol > 0;
+            volParc.vol(subcorMask)=0;
+            volParc.vol=volParc.vol+volSubcort.vol;
+            MRIwrite(volParc,FileIn)
+        end
     end
     end
-end
+end 
