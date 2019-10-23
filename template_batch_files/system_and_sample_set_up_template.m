@@ -54,7 +54,7 @@ paths.python = '~/miniconda3/bin/python3.7';
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/N/dc2/projects/brainconnectomics/chumin_preproc/datadir';
+paths.data = '/N/u/echumin/Carbonate/pipelinetest';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 
@@ -67,7 +67,7 @@ paths.data = '/N/dc2/projects/brainconnectomics/chumin_preproc/datadir';
                         supercomputing submissions.
                         %}
     % generate a list of subjects from directories in path
-%subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and '..'
+subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and '..'
 
     % If you wish to exclude subjects from the above generated list, use
     % the below line, replacing SUBJECT1 with the subject you want to
@@ -80,8 +80,8 @@ paths.data = '/N/dc2/projects/brainconnectomics/chumin_preproc/datadir';
     % use the following three lines as example. If processing more that 2
     % subjects copy and paste the second line as necessary.
     
-clear subjectList %remove the above generated list
-subjectList(1).name = '10606_3'; % copy this line for additional subjects
+%clear subjectList %remove the above generated list
+%subjectList(1).name = '10606_3'; % copy this line for additional subjects
 
                     end
 
