@@ -53,11 +53,14 @@ if flags.EPI.ReadHeaders==1
     disp('Dicom Header Information')
 %-------------------------------------------------------------------------%
     % Identify dicoms
+    jsonFile=fullfile(paths.EPI.dir, '0_epi.json');
     dcmext = strcat('*.',configs.name.dcmFiles); % search for '*.dcm' or '*.IMA'
     dicom_files = dir(fullfile(paths.EPI.dcm,dcmext));
-    if size(dicom_files,1) == 0
+    if size(dicom_files,1) == 0 && ~exist(jsonFile,'file')
         warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
         return
+    elseif size(dicom_files,1) == 0 && exist(jsonFile,'file')
+        warning('No dicom images found. Using existing JSON information')
     end
 %-------------------------------------------------------------------------%
     if configs.EPI.UseJson == 1
@@ -66,24 +69,48 @@ if flags.EPI.ReadHeaders==1
         dcm2niix_json_loc = fullfile(paths.EPI.dir, '0_epi.json');
         dcmHeaders_json = get_features_json(dcm2niix_json_loc,  true, true);
         
-        params.EPI.TR = dcmHeaders_json.RepetitionTime; % TR
-        fprintf(' -JSON: Repetition Time (TR): %d\n',dcmHeaders_json.RepetitionTime)
+        if isfield(dcmHeaders_json,'RepetitionTime')
+            params.EPI.TR = dcmHeaders_json.RepetitionTime; % TR siements
+        elseif isfield(dcmHeaders_json,'tr')
+            params.EPI.TR = dcmHeaders_json.tr; % TR ge
+        end
+        fprintf(' -JSON: Repetition Time (TR): %d\n',params.EPI.TR)
         
-        params.EPI.TE = dcmHeaders_json.EchoTime; % TE
-        fprintf(' -JSON: Echo Time (TE): %d\n',dcmHeaders_json.EchoTime)
+        if isfield(dcmHeaders_json,'EchoTime')
+            params.EPI.TE = dcmHeaders_json.EchoTime; % TE siemens
+        elseif isfield(dcmHeaders_json,'te')
+            params.EPI.TE = dcmHeaders_json.te; % TE ge
+        end 
+        fprintf(' -JSON: Echo Time (TE): %d\n',params.EPI.TE)
+            
+        if isfield(dcmHeaders_json,'FlipAngle')
+            params.EPI.FlipAngle = dcmHeaders_json.FlipAngle; % Flip Angle siemens
+        elseif isfield(dcmHeaders_json,'flip_angle')
+            params.EPI.FlipAngle = dcmHeaders_json.flip_angle; % Flip Angle ge
+        end
+        fprintf(' -JSON: Flip Angle: %d\n',params.EPI.FlipAngle)
         
-        params.EPI.FlipAngle = dcmHeaders_json.FlipAngle; % Flip Angle
-        fprintf(' -JSON: Flip Angle: %d\n',dcmHeaders_json.FlipAngle)
+        if isfield(dcmHeaders_json,'EffectiveEchoSpacing')
+            params.EPI.EffectiveEchoSpacing = dcmHeaders_json.EffectiveEchoSpacing; % Effective Echo Spacing siemens
+        elseif isfield(dcmHeaders_json,'effective_echo_spacing')
+            params.EPI.EffectiveEchoSpacing = dcmHeaders_json.effective_echo_spacing; %ge
+        end
+        fprintf(' -JSON: Effective Echo Spacing: %g\n',params.EPI.EffectiveEchoSpacing)
         
-        params.EPI.EffectiveEchoSpacing = dcmHeaders_json.EffectiveEchoSpacing; % Effective Echo Spacing
-        fprintf(' -JSON: Effective Echo Spacing: %g\n',dcmHeaders_json.EffectiveEchoSpacing)
-        
-        params.EPI.BandwidthPerPixelPhaseEncode = dcmHeaders_json.BandwidthPerPixelPhaseEncode; % Band width Per Pixel Phase Encode
-        fprintf(' -JSON: Band width Per Pixel Phase Encode: %f\n',dcmHeaders_json.BandwidthPerPixelPhaseEncode)
+        if isfield(dcmHeaders_json,'BandwidthPerPixelPhaseEncode')
+            params.EPI.BandwidthPerPixelPhaseEncode = dcmHeaders_json.BandwidthPerPixelPhaseEncode; % Band width Per Pixel Phase Encode
+            fprintf(' -JSON: Band width Per Pixel Phase Encode: %f\n',dcmHeaders_json.BandwidthPerPixelPhaseEncode)
+        else
+            fprintf(' -JSON: Band width Per Pixel Phase Encode: unknown\n') %ge
+        end
         
         % Extract Slicing time
-        params.EPI.slice_fractimes = dcmHeaders_json.SliceTiming;
-        params.EPI.n_slice = size(dcmHeaders_json.SliceTiming, 1); % number of slice
+        if isfield(dcmHeaders_json,'SliceTiming')
+            params.EPI.slice_fractimes = dcmHeaders_json.SliceTiming; % siemens
+        elseif isfield(dcmHeaders_json,'slice_timing')
+            params.EPI.slice_fractimes = dcmHeaders_json.slice_timing; %ge
+        end
+        params.EPI.n_slice = size(params.EPI.slice_fractimes, 1); % number of slice
         fprintf(' -DATA: Number of Slices: %d\n',params.EPI.n_slice)
         slice_fractimes_uniq = unique(params.EPI.slice_fractimes);
         if size(slice_fractimes_uniq,1) == size(params.EPI.slice_fractimes,1) % each slice acquired at a different time
