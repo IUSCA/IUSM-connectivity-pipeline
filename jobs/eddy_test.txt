@@ -1,0 +1,18 @@
+#!/bin/bash
+#####  Constructed by HPC everywhere #####
+#PBS -M aiavenak@iu.edu
+#PBS -l nodes=1:ppn=4,walltime=0:08:00:00
+#PBS -m be
+#PBS -N test_eddy
+#PBS -o out_eddy
+#PBS -e err_eddy
+
+######  Module commands #####
+
+
+
+######  Job commands go below this line #####
+#../main_conn_pipeline.sh
+echo $(pwd)
+cd ~/ConnectomePipeline/
+./main_conn_pipeline.sh
