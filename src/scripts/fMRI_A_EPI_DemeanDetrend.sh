@@ -48,7 +48,7 @@ volBrain_vol = (volBrain_vol > 0) & (volRef_vol != 0)
 print(volBrain_vol.shape)
 
 fileOut=''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
-volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.get_affine(),volBrain.header)
+volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.affine,volBrain.header)
 nib.save(volBrain,fileOut)
 
 # demean and detrend
@@ -64,7 +64,7 @@ for i in range(0,sizeX):
         print(i/sizeX)  ## change this to percentage progress 
 
 fileOut2=''.join([EPIpath,'/6_epi.nii.gz'])
-resting_detrended = nib.Nifti1Image(resting_vol.astype(np.float32),resting.get_affine(),resting.header)
+resting_detrended = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
 nib.save(resting_detrended,fileOut2)
 
 END

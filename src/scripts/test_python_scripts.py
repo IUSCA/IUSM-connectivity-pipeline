@@ -78,7 +78,7 @@
 # print(ones_vol)
 
 # fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/EPI/rT1_brain_mask_FC.nii.gz'
-# volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.get_affine())
+# volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.affine())
 # nib.save(volBrain,fileOut)
 
 # # ------------------------------------------------------------
@@ -111,12 +111,12 @@
 
 # print(TSvoxel_detrended)
 # fileOut2 = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/EPI/6_epi.nii.gz'
-# resting_detrended = nib.Nifti1Image(resting_vol.astype(np.float32),resting.get_affine(),resting.header)
+# resting_detrended = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
 # nib.save(resting_detrended,fileOut2)
 
 
 # fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/EPI/rT1_brain_mask_FC.nii.gz'
-# volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.get_affine())
+# volBrain = nib.Nifti1Image(volBrain_vol.astype(np.float32),volBrain.affine)
 # nib.save(volBrain,fileOut)
 
 # # ------------------------------------------------------------
@@ -278,5 +278,5 @@ corrDWI_vol = corrDWI_vol - DWI_vol
 
 
 fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI/EDDY/delta_DWI.nii.gz'
-corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.get_affine(),corrDWI.header)
+corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
 nib.save(corrDWI_new,fileOut)

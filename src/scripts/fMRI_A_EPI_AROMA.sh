@@ -135,7 +135,8 @@ if [[ -d "${AROMAout}" ]]; then
     eval $cmd     
 fi
 
-cmd="${EXEDIR}/src/func/ICA-AROMA/ICA_AROMA.py \
+#cmd="${EXEDIR}/src/func/ICA-AROMA/ICA_AROMA.py \
+cmd="${ICA_AROMA}/ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \

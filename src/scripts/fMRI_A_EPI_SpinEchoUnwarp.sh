@@ -140,7 +140,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     echo $?
                 fi 
 
-                if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then 
+                if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
                     log "WARNING Topup output not created. Exiting... "
                     exit 1
                 fi

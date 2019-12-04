@@ -105,14 +105,14 @@ fname=''.join([DWIpath,'/0_DWI.nii.gz'])
 DWI=nib.load(fname) 
 DWI_vol = DWI.get_data()
 
-fname=''.join([DWIpath,'/EDDY/eddy_output'])
+fname=''.join([DWIpath,'/EDDY/eddy_output.nii.gz'])
 corrDWI=nib.load(fname)
 corrDWI_vol = corrDWI.get_data()
 
 corrDWI_vol = corrDWI_vol - DWI_vol
 
 fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI/EDDY/delta_DWI.nii.gz'
-corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.get_affine(),corrDWI.header)
+corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
 nib.save(corrDWI_new,fileOut)
 
 END
