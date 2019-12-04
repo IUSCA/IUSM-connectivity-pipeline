@@ -58,7 +58,8 @@ if ${flags_T1_reg2MNI}; then
         warp_inv="${T1reg}/MNI2T1_warp.nii.gz"	
 
         check_inputs "dof6"	"dof6_inv" "dof12" "dof12_inv" "warp" "warp_inv"	
-        checkcode=$?			
+        checkcode=$?	
+
         if [[ $checkcode -eq 1 ]]; then
             log "MISSING required transformation matrices: running reg2MNI"
             configs_T1_useExistingMats=false
@@ -84,7 +85,9 @@ if ${flags_T1_reg2MNI}; then
 
         log "flirt dof 6 -- T1 -> MNI152"
         if [[ -e "${T1path}/T1_fov_denoised.nii" && -e ${path2MNIref} ]]; then		
-            # Linear rigid body registration T1 to MNI		
+            # Linear rigid body registration T1 to MNI	
+            dof6="${T1reg}/T12MNI_dof6.mat"
+
             cmd="flirt -ref ${path2MNIref} \
                 -in ${T1path}/T1_fov_denoised.nii \
                 -omat ${dof6} \
@@ -95,14 +98,18 @@ if ${flags_T1_reg2MNI}; then
             eval $cmd 
             exitcode=$?
             echo $exitcode
+
             if [[ ${exitcode} -eq 0 ]] && [[ -e ${dof6} ]]; then	
-                # inverse matrix flirt dof 6				
+                # inverse matrix flirt dof 6
+                dof6_inv="${T1reg}/MNI2T1_dof6.mat"
+
                 cmd="convert_xfm \
                     -omat ${dof6_inv} \
                     -inverse ${dof6}"
                 log $cmd
                 eval $cmd 
                 exitcode=$?
+
                 if [[ ${exitcode} -ne 0 ]] || [[ ! -e ${dof6_inv} ]]; then
                     log "WARNING ${dof6_inv} not created. Exiting"
                     exit 1
@@ -117,7 +124,9 @@ if ${flags_T1_reg2MNI}; then
 
         log "flirt dof 12 -- T1 -> MNI152"
         if [[ -e "${T1reg}/T1_dof6.nii.gz" && -e ${path2MNIref} ]]; then	
-            # Linear affnie registration of T1 to MNI			
+            # Linear affnie registration of T1 to MNI	
+            dof12="${T1reg}/T12MNI_dof12.mat"
+
             cmd="flirt -ref ${path2MNIref} \
                 -in ${T1reg}/T1_dof6.nii.gz \
                 -omat ${dof12} \
@@ -127,8 +136,11 @@ if ${flags_T1_reg2MNI}; then
             eval $cmd 
             exitcode=$?
             echo $exitcode
+
             if [[ ${exitcode} -eq 0 ]] && [[ -e ${dof12} ]] && [[ -e "${T1reg}/T1_dof12.nii.gz" ]]; then	
-                #inverse matrix flirt dof 12				
+                #inverse matrix flirt dof 12
+                dof12_inv="${T1reg}/MNI2T1_dof12.mat"
+
                 cmd="convert_xfm \
                     -omat ${dof12_inv} \
                     -inverse ${dof12}"
@@ -150,6 +162,8 @@ if ${flags_T1_reg2MNI}; then
         log "fnirt"
         if [[ -e "${T1reg}/T1_dof12.nii.gz" && -e ${path2MNIref} ]]; then
             # Nonlinear warp of T1 to MNI
+            warp="${T1reg}/T12MNI_warp.nii.gz"
+
             cmd="fnirt --ref=${path2MNIref} \
                 --in=${T1reg}/T1_dof12.nii.gz \
                 --cout=${warp} \
@@ -160,7 +174,9 @@ if ${flags_T1_reg2MNI}; then
             exitcode=$?
             echo $exitcode
             if [[ ${exitcode} -eq 0 ]] && [[ -e ${warp} ]] && [[ -e "${T1reg}/T1_warped.nii.gz" ]]; then
-                # inverse warp fnirt					
+                # inverse warp fnirt	
+                warp_inv="${T1reg}/MNI2T1_warp.nii.gz"
+
                 cmd="invwarp \
                     --ref=${T1reg}/T1_dof12 \
                     --warp=${warp} \
@@ -183,17 +199,23 @@ if ${flags_T1_reg2MNI}; then
 
     ## Transform parcellations from MNI to native subject space
     # for every parcellation +1 (Ventricle mask)
+    log "PARCELLATIONS"
     for ((i=0; i<=numParcs; i++)); do
 
         parc="PARC$i"
         parc="${!parc}"
+        echo ${parc}
         parcdir="PARC${i}dir"
         if [[ $i -eq 0 ]]; then  # CSF is PARC0
-            parcdir="$path2MNIparcs/${!parcdir}"
+            parcdir="${!parcdir}"
+            echo ${parcdir}
             T1parc="${T1path}/T1_mask_${parc}.nii.gz"
+            echo ${T1park}
         else            
-            parcdir="${path2MNIparcs}/${!parcdir}/${!parcdir}.nii.gz"        
+            parcdir="${pathParcellations}/${!parcdir}/${!parcdir}.nii.gz"  
+            echo ${parcdir}      
             T1parc="${T1path}/T1_parc_${parc}.nii.gz"
+            echo ${T1park}
         fi
 
         if [[ -f ${parcdir} ]]; then

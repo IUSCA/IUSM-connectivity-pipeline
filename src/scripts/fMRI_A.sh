@@ -82,9 +82,9 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             else
                 if [[ -f "${EPIpath}/0_param_dcm_hdr.sh" ]]; then
                     echo "The next three lines should be uncommented but leave like this for now"
-                    #log "Sourcing parameters from ${EPIpath}/0_param_dcm_hdr.sh"
-                    #source ${EPIpath}/0_param_dcm_hdr.sh 
-                    #export flags_EPI_ReadHeaders=false
+                    log "Sourcing parameters from ${EPIpath}/0_param_dcm_hdr.sh"
+                    source ${EPIpath}/0_param_dcm_hdr.sh 
+                    export flags_EPI_ReadHeaders=false
                 else
                     log "File ${EPIpath}/0_param_dcm_hdr.sh not found; Exiting..."
                 fi 

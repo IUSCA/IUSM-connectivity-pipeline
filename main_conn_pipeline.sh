@@ -9,6 +9,13 @@ module load afni/18.3.03
 module load ants
 # module load singularity
 
+# FSL
+# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+if [[ -z ${FSLDIR} ]] ; then
+	echoerr "FSLDIR not set"
+	exit 1
+fi
+
 ################################################################################
 ################################################################################
 ## GLOBALS & dependencies
@@ -24,18 +31,10 @@ source ${EXEDIR}/config.sh
 export python3_7="${EXEDIR}/../miniconda3/bin/python3.7"
 
 
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
-
-
 #################################################################################
 # TODO -- List and loop through all subjects
-export SUBJ="10692_1_AAK"
-#export SUBJ="10692_1"
+## Not sure if this loop should be in a wrapper script that would allow running subjects in parallel.  
+export SUBJ="10692_1"
 export T1path="${path2data}/${SUBJ}/${configs_T1}"
 export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
 export EPItemp="${path2data}/${SUBJ}/EPI"
@@ -53,10 +52,14 @@ start=`date +%s`
     # # read in args
     # while (( $# > 1 )) ; do
     #     case "$1" in
-    # 		-d | --dwi) shift
-    # 			DWIinputnative="${1}" ; checkisfile ${DWIinputnative}
+    # 		-d | --data) shift
+    # 			SUBJdir="${1}" 
     # 			shift
     # 			;;
+    # 		-p | --parc) shift
+    # 			PARCdir="${1}" 
+    # 			shift
+    # 			;;    
     # 		-o | --out) shift
     # 			OUTbasedir="${1}"
     # 			shift
@@ -76,11 +79,11 @@ start=`date +%s`
 
 # ################################################################################
 # ################################################################################
-# ## check the argugments
+# ## check the arguments
 
     # # basic files needed
-    # if [[ -z ${DWIinputnative} || -z ${OUTbasedir} ]] ; then
-    # 	echoerr "missing required args: dwi img, bvecs, bvals, t1, out dir"
+    # if [[ -d ${PARCdir} || -d ${SUBJdir} || -d ${OUTbasedir} ]] ; then
+    # 	echoerr "missing required directories"
     # 	exit 1
     # fi
 

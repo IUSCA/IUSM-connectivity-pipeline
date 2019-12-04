@@ -61,7 +61,7 @@ fi
 echo "#### T1 to MNI 2mm nonlinear transform"
 
 fileT1="${T1path}/T1_brain.nii"
-fileMNI2mm="${path2MNIparcs}/MNI_templates/MNI152_T1_2mm_brain.nii.gz"
+fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
 filedof12mat="${AROMAreg_path}/T1_2_MNI2mm_dof12.mat"
 filedof12img="${AROMAreg_path}/rT1_dof12_2mm.nii.gz"
 
