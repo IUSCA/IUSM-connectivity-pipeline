@@ -234,6 +234,8 @@ if flags.EPI.SpinEchoUnwarp==1
         warning('%s',paths.EPI.SEFM,' does not exist. Field map correction must be skipped.')
         return
     else
+        fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
+        fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
         if exist(paths.EPI.APdcm,'dir') && exist(paths.EPI.PAdcm,'dir')
             fileNiiAP= 'AP';
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
@@ -251,18 +253,15 @@ if flags.EPI.SpinEchoUnwarp==1
             
             sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
             [~,result] = system(sentence); % gzip fieldmap volumes
-            
+        elseif exist(fileInAP,'file') && exist(fileInPA,'file')
             %Concatenate the AP then PA into single 4D image
             fileOut = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
             if exist(fileOut,'file')
                 sentence=sprintf('rm -fr %s',fileOut);
                 [~,result] = system(sentence); % if it already exists; remove it.
             end
-            fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
-            fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
             sentence = sprintf('%s/fslmerge -tr %s %s %s %f',paths.FSL,fileOut,fileInAP,fileInPA,params.EPI.TR);
             [~,result]=system(sentence);
-            
             
             % Generate an acqparams text file based on number of field maps.
             configs.EPI.SEreadOutTime = get_readout(paths,configs.name.dcmFiles);
@@ -459,7 +458,7 @@ if flags.EPI.SpinEchoUnwarp==1
             end
             
         else
-            warning('UNWARP DICOMS folders do exist. Field Map correction failed.')
+            warning('UNWARP DICOMS folders or nii images do not exist. Field Map correction failed.')
             return
         end
     end
@@ -1064,11 +1063,13 @@ if flags.EPI.ROIs==1
                         ROIs_numVoxels(i_roi,1)=nnz(parcGM==i_roi);
                     end
                     restingROIs = zeros(numROIs,numTimePoints);
+                    ROIs_numNans = nan(numROIs,numTimePoints);
                     for timePoint = 1:numTimePoints
                         aux = reshape(resting.vol(:,:,:,timePoint),[sizeX,sizeY,sizeZ]);
                         for ROI = 1:numROIs
                             voxelsROI = (parcGM==ROI);  
-                            restingROIs(ROI,timePoint) = mean(aux(voxelsROI));
+                            restingROIs(ROI,timePoint) = nanmean(aux(voxelsROI));
+                            ROIs_numNans(ROI,timePoint)=nnz(isnan(aux(voxelsROI)));
                         end
                         if mod(timePoint,50)==0
                             fprintf('%d out of %d\n',timePoint,numTimePoints);
@@ -1077,7 +1078,7 @@ if flags.EPI.ROIs==1
                     fileOut=fullfile(paths.EPI.dir,strcat('AROMA/9_epi_',parcs.plabel(k).name,'_ROIs.mat'));
                     % ROIs_numVOxels is the number of voxels belonging to each node in a partition
                     % restingROIs is the average timeseries of each region
-                    save(fileOut,'restingROIs','ROIs_numVoxels');
+                    save(fileOut,'restingROIs','ROIs_numVoxels','ROIs_numNans');
                 end
            end      
     else
