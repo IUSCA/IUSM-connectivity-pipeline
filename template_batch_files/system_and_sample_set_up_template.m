@@ -12,7 +12,7 @@
             %------------------------------------------------%
 
     % Add path to connectome scripts directory
-paths.scripts = '/gpfs/home/e/c/echumin/Carbonate/IUSM-connectivity-pipeline/connectome_scripts';
+paths.scripts = '/home/echumin/Documents/PROJECTS/image_processing/IUSM-connectivity-pipeline/connectome_scripts';
 addpath(paths.scripts);
     % path to use MRIread MRIwrite
 addpath(fullfile(paths.scripts,'toolbox_matlab_nifti'));
@@ -34,12 +34,6 @@ paths.AFNI = apath(1:end-6);
 clear apath
     % Path to MRIcroGL
 paths.MRIcroGL = '/N/soft/rhel6/mricrogl/20170808/mricrogl_lx';
-    % Camino setup
-paths.CaminoSetup=sprintf('PATH=%s:${PATH}',fullfile('/N/soft/rhel6/camino/2.3.5','bin'));
-    % CaminoTrackVis setup
-paths.CamTrackSetup=sprintf('PATH=%s:${PATH}',fullfile('/N/soft/rhel6/camino-trackvis/camino-trackvis-0.2.8.1','bin'));
-    % DTItk setup
-paths.DTItkSetup=sprintf('PATH=%s:${PATH}',fullfile('/N/soft/rhel6/dtitk/2.3.1','bin'));
     % ants brain extraction path
 [~,antspath]=system('which ants.sh');
 paths.ANTS = extractBefore(antspath,'/ants.sh');
@@ -54,7 +48,7 @@ paths.python = '~/miniconda3/bin/python3.7';
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/N/u/echumin/Carbonate/pipelinetest';
+paths.data = '/home/echumin/Documents/PROJECTS/image_processing/datadir/';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 
@@ -81,7 +75,7 @@ subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and 
     % subjects copy and paste the second line as necessary.
     
 %clear subjectList %remove the above generated list
-%subjectList(1).name = '10606_3'; % copy this line for additional subjects
+%subjectList(1).name = '10004_6'; % copy this line for additional subjects
 
                     end
 
