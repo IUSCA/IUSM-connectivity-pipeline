@@ -898,7 +898,8 @@ if flags.EPI.DemeanDetrend == 1
             disp(i/sizeX)
         end
     end
-    fileOut2 = fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz');
+    %fileOut2 = fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz');
+    fileOut2 = fullfile(paths.EPI.dir,'6_epi.nii.gz');
     MRIwrite(resting,fileOut2,'double');
     sentence=sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,fileOut2,fileOut,fileOut2);
     [~,result]=system(sentence);
@@ -909,8 +910,10 @@ if flags.EPI.Regressors == 1
     disp('---------------------------')
     disp('7. Physiological Regressors')
     disp('---------------------------')
-    if exist(fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz'),'file')
-        fileIn = fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz');
+    %if exist(fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz'),'file')
+        %fileIn = fullfile(paths.EPI.dir,'AROMA','6_epi.nii.gz');
+    if exist(fullfile(paths.EPI.dir,'6_epi.nii.gz'),'file')
+        fileIn = fullfile(paths.EPI.dir,'6_epi.nii.gz');
         resting = MRIread(fileIn);
         [sizeX,sizeY,sizeZ,numTimePoints] = size(resting.vol);
 
@@ -928,7 +931,8 @@ if flags.EPI.Regressors == 1
     GMnumVoxels = nnz(volGM.vol);
     GMmask = logical(repmat(volGM.vol,[1,1,1,numTimePoints]));
     GMts = reshape(resting.vol(GMmask),[GMnumVoxels,numTimePoints]);
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataGM.mat'),'GMmask','GMts')
+    %save(fullfile(paths.EPI.dir,'AROMA/7_dataGM.mat'),'GMmask','GMts')
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGM.mat'),'GMmask','GMts')
 %-------------------------------------------------------------------------%
     % CSFvent time-series and PCA
     CSFnumVoxels = nnz(volCSFvent.vol);
@@ -938,9 +942,11 @@ if flags.EPI.Regressors == 1
     CSFderiv = [0,diff(CSFavg)];
     if configs.EPI.aCompCor == 1
         [CSFpca,CSFvar] = get_pca(CSFts',configs.EPI.numCompPCA);
-        save(fullfile(paths.EPI.dir,'AROMA/7_dataCSF.mat'),'CSFpca','CSFvar','CSFmask','CSFts','CSFavg','CSFderiv');
+        %save(fullfile(paths.EPI.dir,'AROMA/7_dataCSF.mat'),'CSFpca','CSFvar','CSFmask','CSFts','CSFavg','CSFderiv');
+        save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataCSF.mat'),'CSFpca','CSFvar','CSFmask','CSFts','CSFavg','CSFderiv');
     else
-        save(fullfile(paths.EPI.dir,'AROMA/7_dataCSF.mat'),'CSFmask','CSFts','CSFavg','CSFderiv');
+        %save(fullfile(paths.EPI.dir,'AROMA/7_dataCSF.mat'),'CSFmask','CSFts','CSFavg','CSFderiv');
+        save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataCSF.mat'),'CSFmask','CSFts','CSFavg','CSFderiv');
     end
     clear CSFts;
 %-------------------------------------------------------------------------%
@@ -952,9 +958,11 @@ if flags.EPI.Regressors == 1
     WMderiv = [0,diff(WMavg)];
     if configs.EPI.aCompCor == 1
         [WMpca,WMvar] = get_pca(WMts',configs.EPI.numCompPCA);
-        save(fullfile(paths.EPI.dir,'AROMA/7_dataWM.mat'),'WMpca','WMvar','WMmask','WMts','WMavg','WMderiv');
+        %save(fullfile(paths.EPI.dir,'AROMA/7_dataWM.mat'),'WMpca','WMvar','WMmask','WMts','WMavg','WMderiv');
+        save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataWM.mat'),'WMpca','WMvar','WMmask','WMts','WMavg','WMderiv');
     else
-        save(fullfile(paths.EPI.dir,'AROMA/7_dataWM.mat'),'WMmask','WMts','WMavg','WMderiv');
+        %save(fullfile(paths.EPI.dir,'AROMA/7_dataWM.mat'),'WMmask','WMts','WMavg','WMderiv');
+        save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataWM.mat'),'WMmask','WMts','WMavg','WMderiv');
     end
     clear WMts;
 %-------------------------------------------------------------------------%
@@ -964,7 +972,8 @@ if flags.EPI.Regressors == 1
     GSts = reshape(resting.vol(GSmask),[GSnumVoxels,numTimePoints]);
     GSavg = mean(GSts);
     GSderiv = [0,diff(GSavg)];
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataGS.mat'),'GSmask','GSts','GSavg','GSderiv');
+    %save(fullfile(paths.EPI.dir,'AROMA/7_dataGS.mat'),'GSmask','GSts','GSavg','GSderiv');
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGS.mat'),'GSmask','GSts','GSavg','GSderiv');
     clear GSts;
     
 %% -----------------------------------------------------------------------%
@@ -984,13 +993,15 @@ if flags.EPI.Regressors == 1
         disp('configs.EPI.GS not specified. Make sure its value is 1 or 0. Exiting...')
         return
     end
-    save(fullfile(paths.EPI.dir,'AROMA/7_regressors.mat'),'regressors');
+    %save(fullfile(paths.EPI.dir,'AROMA/7_regressors.mat'),'regressors');
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_regressors.mat'),'regressors');
 %-------------------------------------------------------------------------%
     % regress-out motion regressors  
     resting.vol(~GSmask)=0;
     resting.vol = apply_regressors(resting.vol,volBrain.vol,regressors);
     
-    fileOut = fullfile(paths.EPI.dir,'AROMA/7_epi.nii.gz');
+    %fileOut = fullfile(paths.EPI.dir,'AROMA/7_epi.nii.gz');
+    fileOut = fullfile(paths.EPI.dir,'GSreg_yes/7_epi.nii.gz');
     MRIwrite(resting,fileOut,'double');
 
     GSts_resid = reshape(resting.vol(GSmask),[GSnumVoxels,numTimePoints]); %time series of all voxels
@@ -998,10 +1009,15 @@ if flags.EPI.Regressors == 1
     WMts_resid = reshape(resting.vol(WMmask),[WMnumVoxels,numTimePoints]); %time series of WM voxels
     CSFts_resid = reshape(resting.vol(CSFmask),[CSFnumVoxels,numTimePoints]); %time series of CSF voxels
 
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'GSts_resid','GSmask');
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataGMresid.mat'),'GMts_resid','GMmask');
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataWMresid.mat'),'WMts_resid','WMmask');
-    save(fullfile(paths.EPI.dir,'AROMA/7_dataCSFresid.mat'),'CSFts_resid','CSFmask');
+%     save(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'GSts_resid','GSmask');
+%     save(fullfile(paths.EPI.dir,'AROMA/7_dataGMresid.mat'),'GMts_resid','GMmask');
+%     save(fullfile(paths.EPI.dir,'AROMA/7_dataWMresid.mat'),'WMts_resid','WMmask');
+%     save(fullfile(paths.EPI.dir,'AROMA/7_dataCSFresid.mat'),'CSFts_resid','CSFmask');
+    
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGSresid.mat'),'GSts_resid','GSmask');
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGMresid.mat'),'GMts_resid','GMmask');
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataWMresid.mat'),'WMts_resid','WMmask');
+    save(fullfile(paths.EPI.dir,'GSreg_yes/7_dataCSFresid.mat'),'CSFts_resid','CSFmask');
 
     clear GSts_resid GMts_resid WMts_resid CSFts_resid;
 
@@ -1017,8 +1033,10 @@ if flags.EPI.BandPass==1
     disp('8. Bandpass')
     disp('-----------')
 
-    if exist(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'file') 
-        load(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'GSts_resid','GSmask');
+    %if exist(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'file') 
+    %    load(fullfile(paths.EPI.dir,'AROMA/7_dataGSresid.mat'),'GSts_resid','GSmask');
+    if exist(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGSresid.mat'),'file') 
+        load(fullfile(paths.EPI.dir,'GSreg_yes/7_dataGSresid.mat'),'GSts_resid','GSmask');
     
         order = 1;
         f1 = (configs.EPI.fMin*2)*params.EPI.TR;
@@ -1026,10 +1044,12 @@ if flags.EPI.BandPass==1
         [tsf] = apply_butterworth_filter(GSts_resid',order,f1,f2);
         clear GSts_resid;
 
-        fileIn = fullfile(paths.EPI.dir,'AROMA/7_epi.nii.gz');
+        %fileIn = fullfile(paths.EPI.dir,'AROMA/7_epi.nii.gz');
+        fileIn = fullfile(paths.EPI.dir,'GSreg_yes/7_epi.nii.gz');
         resting = MRIread(fileIn);
         resting.vol(GSmask) = tsf';
-        fileOut = fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz');
+        %fileOut = fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz');
+        fileOut = fullfile(paths.EPI.dir,'GSreg_yes/8_epi.nii.gz');
         MRIwrite(resting,fileOut,'double');
         clear GSmask tsf resting;
     else
@@ -1044,13 +1064,15 @@ if flags.EPI.ROIs==1
     disp('11. ROIs')
     disp('--------')
     
-    if exist(fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz'),'file')
+    %if exist(fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz'),'file')
+    if exist(fullfile(paths.EPI.dir,'GSreg_yes/8_epi.nii.gz'),'file')
 
         volWM = MRIread(fullfile(paths.EPI.dir,'rT1_WM_mask_eroded.nii.gz')); volWM = volWM.vol;
         volCSF = MRIread(fullfile(paths.EPI.dir,'rT1_CSF_mask_eroded.nii.gz')); volCSF = volCSF.vol;
         volBrain = MRIread(fullfile(paths.EPI.dir,'rT1_brain_mask_FC.nii.gz')); volBrain = volBrain.vol;
 
-        resting = MRIread(fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz'));
+        %resting = MRIread(fullfile(paths.EPI.dir,'AROMA/8_epi.nii.gz'));
+        resting = MRIread(fullfile(paths.EPI.dir,'GSreg_yes/8_epi.nii.gz'));
             [sizeX,sizeY,sizeZ,numTimePoints] = size(resting.vol);
             
           for k=1:length(parcs.pdir)
@@ -1068,13 +1090,14 @@ if flags.EPI.ROIs==1
                         aux = reshape(resting.vol(:,:,:,timePoint),[sizeX,sizeY,sizeZ]);
                         for ROI = 1:numROIs
                             voxelsROI = (parcGM==ROI);  
-                            restingROIs(ROI,timePoint) = mean(aux(voxelsROI));
+                            restingROIs(ROI,timePoint) = nanmean(aux(voxelsROI));
                         end
                         if mod(timePoint,50)==0
                             fprintf('%d out of %d\n',timePoint,numTimePoints);
                         end
                     end
-                    fileOut=fullfile(paths.EPI.dir,strcat('AROMA/9_epi_',parcs.plabel(k).name,'_ROIs.mat'));
+                    %fileOut=fullfile(paths.EPI.dir,strcat('AROMA/9_epi_',parcs.plabel(k).name,'_ROIs.mat'));
+                    fileOut=fullfile(paths.EPI.dir,strcat('GSreg_yes/9_epi_',parcs.plabel(k).name,'ROIs.mat'));
                     % ROIs_numVOxels is the number of voxels belonging to each node in a partition
                     % restingROIs is the average timeseries of each region
                     save(fileOut,'restingROIs','ROIs_numVoxels');
