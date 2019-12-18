@@ -175,16 +175,27 @@ flags.EPI.RegOthers = 0;
 flags.EPI.IntNorm4D = 0; % Intensity normalization to global 4D mean of 1000
 %-------------------------------------------------------------------------%
                        % MOTION AND OUTLIER CORRECTION
-flags.EPI.AROMA = 0; % ICA-based denoising; WARNING: This will smooth your data.
-flags.EPI.DemeanDetrend = 0;
-flags.EPI.Regressors = 0; %physiological regressors
-    configs.EPI.aCompCor = 1;
-        configs.EPI.numCompPCA = 5;
-    configs.EPI.GS = 0; % global signal regression  
-flags.EPI.BandPass = 0;
+%-------------------------------------------------------------------------% 
+% This is a new section and should be ran as a whole, until its subsections
+% can be tested independently.
+flags.EPI.NuisanceReg = 2;
+    % 1 - ICA-based denoising; WARNING: This will smooth your data.
+    % 2 - Head Motion Parameter Regression
+        configs.EPI.numReg = 24; % 12 (orig and deriv) or 24 (+ sq of 12)
+    flags.EPI.PhysReg = 2; %physiological regressors
+        % 1 - aCompCorr; PCA based CSF and WM signal regression (up to 5
+        %     components)
+            configs.EPI.numPC = 5; % 1-5; the maximum and recommended number is 5 % leave empty to putput all
+        % 2 - mean WM and CSF signal regression
+            configs.EPI.numPhys = 8; % 2-orig; 4-orig+deriv; 8-orig+deriv+sq
+    flags.EPI.GS = 1; % global signal regression 
+        configs.EPI.numGS = 4; % 1-orig; 2-orig+deriv; 4-orig+deriv+sq        
+flags.EPI.DemeanDetrend = 1;
+flags.EPI.BandPass = 1;
     configs.EPI.fMin = .009;
-    configs.EPI.fMax = .08;
+    configs.EPI.fMax = .08;   
 flags.EPI.ROIs = 1;
+%-------------------------------------------------------------------------% 
     
 %% 
                     %------------------------%
@@ -237,25 +248,9 @@ flags.DWI.DTIfit = 1; % Tensor estimation and generation of scalar maps
                       %----------------------%
                       %  SET sCONN SUBFLAGS  %
                       %----------------------%
-flags.DWI.reg2T1 = 1; % register diffusion data to T1 (dof6, bbr)
-flags.DWI.tissueMasks = 1; % create masks 4 seeds, fibers, etc
-flags.DWI.Camino = 1; % run camino processing
-    configs.DWI.CaminoReset = 1; % erase existing camino directory and start over
-    configs.DWI.HeapSizeCamino = 16384; % RAM allocation for camino
-flags.DWI.getTensor = 1; % get tensor and fiber orientation data
-    configs.DWI.order2Threshold = 12;
-    configs.DWI.order4Threshold = 6;% Decrease value get more two tensor voxels
-    configs.DWI.order6Threshold = 0;% Do not change this unless you are going beyond two components in deterministic modeling.
-    configs.DWI.clusterMinSizeMultiTensor = 8;% Minimum cluster size so that voxels are modeled with multi-tensor. They go back to single-tensor otherwise
-flags.DWI.Deterministic = 1; % deterministic whole brain tractography   
-    configs.DWI.seedsWMborder = 1; % use GM WM interface for seeds
-    configs.DWI.CURVthresh = 45; % maximum accepted turn ange
-    configs.DWI.stepSize = 1; % tracking step, relative to voxels
-flags.DWI.FiberFiles = 1; % generate trk and vtk files for visualization
-    configs.DWI.LengthMin = 8; % minimum accepted fiber length
-    configs.DWI.LengthMax = 180; % maximum accepted fiber length
-    configs.DWI.FAthresh = 0.1; % minimum FA to allow tracking
-flags.DWI.genMats = 0; % generate connectivity matrices
+flags.DWI.regT1_2DWI = 1;
+flags.DWI.MRtrix = 1;
+flags.DWI.connMatrix = 1; % generate connectivity matrices
 
 %%
                     %------------------------------%
