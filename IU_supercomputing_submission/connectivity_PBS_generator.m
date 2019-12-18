@@ -49,7 +49,7 @@ if numPBS+1>1
         subjectsforloop(1:7) = subjectfolders((i*7-7+1):i*7);
         fidpbs = fopen([batch_path '/PBSconnectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name],'w');
         fprintf(fidpbs, '#!/bin/bash\n');
-        fprintf(fidpbs, '#PBS -l nodes=1:ppn=8,vmem=64gb,walltime=12:00:00\n');
+        fprintf(fidpbs, '#PBS -l nodes=1:ppn=4,vmem=32gb,walltime=3:00:00\n');
         fprintf(fidpbs, ['#PBS -M ' email '\n']);
         fprintf(fidpbs, '#PBS -m abe\n');
         fprintf(fidpbs, ['#PBS -N connectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name '\n']);
@@ -81,7 +81,7 @@ if numPBS+1>1
                 fprintf(fidwrap1, ['batch_set_up = ''' batch_set_up ''';\n']);
                 fprintf(fidwrap1, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
                 fprintf(fidwrap1, ['addpath ' pipeline_path ';\n']);
-                fprintf(fidwrap1, 'run_connectivity_pipeline_WIP(system_sample_set_up,batch_set_up,subjectList)\n\n');
+                fprintf(fidwrap1, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
                 end
             end
         end
@@ -99,7 +99,7 @@ numsubjectsremain = length(subjectsremain); % finds number of last subjects
 if numsubjectsremain>0
     fidpbs = fopen([batch_path '/PBSconnectome_' subjectsremain(1).name 'to' subjectsremain(end).name],'w');
     fprintf(fidpbs, '#!/bin/bash\n');
-    fprintf(fidpbs, '#PBS -l nodes=1:ppn=8,vmem=64gb,walltime=12:00:00\n');
+    fprintf(fidpbs, '#PBS -l nodes=1:ppn=4,vmem=32gb,walltime=3:00:00\n');
     fprintf(fidpbs, ['#PBS -M ' email '\n']);
     fprintf(fidpbs, '#PBS -m abe\n');
     fprintf(fidpbs, ['#PBS -N connectome_' subjectsremain(1).name 'to' subjectsremain(end).name '\n']);
@@ -131,7 +131,7 @@ if numsubjectsremain>0
             fprintf(fidwrap1, ['batch_set_up = ''' batch_set_up ''';\n']);
             fprintf(fidwrap1, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
             fprintf(fidwrap1, ['addpath ' pipeline_path ';\n']);
-            fprintf(fidwrap1, 'run_connectivity_pipeline_WIP(system_sample_set_up,batch_set_up,subjectList)\n\n');
+            fprintf(fidwrap1, 'run_connectivity_pipeline(system_sample_set_up,batch_set_up,subjectList)\n\n');
             end
         end
     end

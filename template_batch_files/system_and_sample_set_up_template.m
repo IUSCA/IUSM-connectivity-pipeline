@@ -42,7 +42,7 @@ clear antspath
     % currently using python2.7 in the miniconda environment
     % consult readme and manual in the ICA-AROMA directory in
     % connectome_scripts for instalation instructions.
-paths.python = '~/miniconda3/bin/python3.7';
+paths.python = '~/anaconda3/bin/python3.7';
 %%
                     %------------------------------%
                     %  SELECT SUBJECT DIRECTORIES  %

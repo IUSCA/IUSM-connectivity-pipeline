@@ -73,11 +73,11 @@ parcs.pnodal(3).true=0;
 flags.global.T1_prepare_A = 0;
 flags.global.T1_prepare_B = 0;
     %  fMRI  %
-flags.global.fMRI_A = 0;
+flags.global.fMRI_A = 1;
 flags.global.fMRI_B = 0;
     %  DWI   %
 flags.global.DWI_A = 0;
-flags.global.DWI_B = 1;
+flags.global.DWI_B = 0;
 flags.global.DWI_C = 0;
 
     % Parallel %
@@ -175,16 +175,27 @@ flags.EPI.RegOthers = 0;
 flags.EPI.IntNorm4D = 0; % Intensity normalization to global 4D mean of 1000
 %-------------------------------------------------------------------------%
                        % MOTION AND OUTLIER CORRECTION
-flags.EPI.AROMA = 0; % ICA-based denoising; WARNING: This will smooth your data.
-flags.EPI.DemeanDetrend = 0;
-flags.EPI.Regressors = 0; %physiological regressors
-    configs.EPI.aCompCor = 0;
-        configs.EPI.numCompPCA = 5;
-    configs.EPI.GS = 0; % global signal regression  
-flags.EPI.BandPass = 0;
+%-------------------------------------------------------------------------% 
+% This is a new section and should be ran as a whole, until its subsections
+% can be tested independently.
+flags.EPI.NuisanceReg = 2;
+    % 1 - ICA-based denoising; WARNING: This will smooth your data.
+    % 2 - Head Motion Parameter Regression
+        configs.EPI.numReg = 24; % 12 (orig and deriv) or 24 (+ sq of 12)
+    flags.EPI.PhysReg = 2; %physiological regressors
+        % 1 - aCompCorr; PCA based CSF and WM signal regression (up to 5
+        %     components)
+            configs.EPI.numPC = 5; % 1-5; the maximum and recommended number is 5 % leave empty to putput all
+        % 2 - mean WM and CSF signal regression
+            configs.EPI.numPhys = 8; % 2-orig; 4-orig+deriv; 8-orig+deriv+sq
+    flags.EPI.GS = 1; % global signal regression 
+        configs.EPI.numGS = 4; % 1-orig; 2-orig+deriv; 4-orig+deriv+sq        
+flags.EPI.DemeanDetrend = 1;
+flags.EPI.BandPass = 1;
     configs.EPI.fMin = .009;
-    configs.EPI.fMax = .08;
+    configs.EPI.fMax = .08;   
 flags.EPI.ROIs = 1;
+%-------------------------------------------------------------------------% 
     
 %% 
                     %------------------------%
