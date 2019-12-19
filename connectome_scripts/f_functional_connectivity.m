@@ -535,19 +535,25 @@ if flags.EPI.MotionCorr==1
         fileIn = fullfile(paths.EPI.dir,'1_epi.nii.gz');
         disp(' -Will use the slice time corrected 1_epi.nii.gz as input')
     end
+    
+    % Compute motion outliers
+    fileMask = fullfile(paths.EPI.dir,'1_epi_brain_mask.nii.gz');
+    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,fileMask,paths,configs);
+    scrub =~sum(horzcat(fd_scrub,dvars_scrub),2);
+    save(fullfile(paths.EPI.dir,'scrubbing_goodvols.mat'),'scrub')
       
-        fileOut = fullfile(paths.EPI.dir,'2_epi');
-        sentence=sprintf('%s/fslval %s dim4',paths.FSL,fileIn);
-        [~,result] = system(sentence);
-        params.EPI.nvols = str2double(result);
-        fprintf('Number of volumes in 1_epi_brain: %d\n',params.EPI.nvols)
+    fileOut = fullfile(paths.EPI.dir,'2_epi');
+    sentence=sprintf('%s/fslval %s dim4',paths.FSL,fileIn);
+    [~,result] = system(sentence);
+    params.EPI.nvols = str2double(result);
+    fprintf('Number of volumes in 1_epi_brain: %d\n',params.EPI.nvols)
 
-        sentence = sprintf('%s/mcflirt -in %s -out %s -plots -meanvol',...
-            paths.FSL,fileIn,fileOut);
-        [~,result] = system(sentence);
-        
-        sentence = sprintf('mv %s/2_epi.par %s/motion.txt',paths.EPI.dir,paths.EPI.dir);
-        [~,result] = system(sentence);
+    sentence = sprintf('%s/mcflirt -in %s -out %s -plots -meanvol',...
+        paths.FSL,fileIn,fileOut);
+    [~,result] = system(sentence);
+
+    sentence = sprintf('mv %s/2_epi.par %s/motion.txt',paths.EPI.dir,paths.EPI.dir);
+    [~,result] = system(sentence);
 end
 
 %% 3 bet fmri and T1 registration
@@ -601,10 +607,11 @@ if flags.EPI.RegT1==1
     % bbr registration of fMRI to rT1_dof6 based on WMseg
     fileRef = fullfile(paths.EPI.dir,'rT1_brain_dof6.nii.gz');
     fileIn = fullfile(paths.EPI.dir,'2_epi_meanvol.nii.gz');
+    fileOut = fullfile(paths.EPI.dir,'rT1_brain_dof6bbr.nii.gz');
     fileOmat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
     fileWMseg = fullfile(paths.EPI.dir,'rT1_WM_mask');
-    sentence = sprintf('%s/flirt -in %s -ref %s -omat %s -wmseg %s -cost bbr',...
-        paths.FSL,fileIn,fileRef,fileOmat,fileWMseg);
+    sentence = sprintf('%s/flirt -in %s -ref %s -out %s -omat %s -wmseg %s -cost bbr',...
+        paths.FSL,fileIn,fileRef,fieOut,fileOmat,fileWMseg);
     [~,result] = system(sentence);
     % Generate inverse matrix of bbr (T1_2_epi)
     fileMat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
@@ -863,7 +870,7 @@ switch flags.EPI.NuisanceReg
         if ~exist(paths.EPI.HMP,'dir')
             mkdir(paths.EPI.HMP)
         end
-
+        
     % load 6 motion regressors
         load(fullfile(paths.EPI.dir,'motion.txt')); %#ok<*LOAD>
     % derivatives of 6 motion regressors
@@ -1087,6 +1094,10 @@ end
             nR = 'aroma';
         case 2
             nR = sprintf('hmp%d',configs.EPI.numReg);
+            if configs.EPI.scrub == 1
+                load(paths.EPI.dir,'scrubbing_goodvols.mat')
+                nR = sprintf('scrubbed_%s',nR);
+            end
     end
     switch flags.EPI.GS
         case 1
@@ -1106,7 +1117,11 @@ end
     resting.vol(~GSmask)=0;
 
         for rg=1:length(zRegressMatrix)
-            resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1});
+            if flags.EPI.NuisanceReg == 2 && configs.EPI.scrub == 1
+                resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1},scrub);
+            else
+               resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1}); 
+            end
         end
         % save data (for header info), regressors, and residuals
         save(fullfile(paths.EPI.PhRegDir,sprintf('NuisanceRegression_%s_output.mat',nR)),...
