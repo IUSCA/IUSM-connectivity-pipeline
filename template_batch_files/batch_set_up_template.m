@@ -74,7 +74,7 @@ flags.global.T1_prepare_A = 0;
 flags.global.T1_prepare_B = 0;
     %  fMRI  %
 flags.global.fMRI_A = 1;
-flags.global.fMRI_B = 0;
+flags.global.fMRI_B = 0; % DO NOT TURN ON; WILL NOT WORK
     %  DWI   %
 flags.global.DWI_A = 0;
 flags.global.DWI_B = 0;
@@ -166,10 +166,13 @@ flags.EPI.SpinEchoUnwarp = 0; % Requires UNWARP directory and approporiate dicom
 flags.EPI.SliceTimingCorr = 0; % recommended for TR > 1.2s or non multiband data
     configs.EPI.UseTcustom = 1;% 1: use header-extracted times (suggested)
 flags.EPI.MotionCorr = 0;
+    % set criteria for flagging possible motion outliers
+            configs.EPI.FDcut=[]; %  leave as [] for fsl outlier criteria
+            configs.EPI.DVARScut=[];
 flags.EPI.RegT1 = 0;
     configs.EPI.epibetF = 0.3;
     configs.EPI.minVoxelsClust = 8; % originally hardwired to 8
-flags.EPI.RegOthers = 0;
+flags.EPI.RegOthers = 1;
     configs.EPI.GMprobthr = 0.2;% Threshold the GM probability image
                                  % change from 0.25 to 0.2 or 0.15
 flags.EPI.IntNorm4D = 0; % Intensity normalization to global 4D mean of 1000
@@ -182,6 +185,7 @@ flags.EPI.NuisanceReg = 2;
     % 1 - ICA-based denoising; WARNING: This will smooth your data.
     % 2 - Head Motion Parameter Regression
         configs.EPI.numReg = 24; % 12 (orig and deriv) or 24 (+ sq of 12)
+        configs.EPI.scrub = 1;
     flags.EPI.PhysReg = 2; %physiological regressors
         % 1 - aCompCorr; PCA based CSF and WM signal regression (up to 5
         %     components)
@@ -197,7 +201,7 @@ flags.EPI.BandPass = 1;
 flags.EPI.ROIs = 1;
 %-------------------------------------------------------------------------% 
     
-%% 
+%%  DO NOT USE THIS SECTION NEEDS TO BE REWORKED
                     %------------------------%
                     %  MATRICES AND FIGURES  %
                     %         fMRI_B         %
