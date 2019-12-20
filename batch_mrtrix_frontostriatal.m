@@ -47,8 +47,7 @@ for i=1:4
         brainIN=fullfile(OUTdir,'rT1_brain.nii.gz');
         file5tt=fullfile(OUTdir,'fsl5tt.nii.gz');
         
-        sentence3=sprintf('5ttgen fsl -premasked %s %s',...
-            brainIN,file5tt);
+        sentence3=sprintf('5ttgen fsl -premasked %s %s',brainIN,file5tt);
       %  [~,fsl5tt_return]=system(sentence);
         
     % generate streamlines

@@ -272,7 +272,7 @@ if flags.global.DWI_B==1
             fprintf('Processing DWI of %s\n',subjectList(i).name)
             disp('---------------------------')
             % run DWI preprocessing
-            [paths,flags,configs,parcs]=f_structural_connectome(paths,flags,configs,parcs);
+            [paths,flags,configs,parcs]=f_structural_connectome_v2(paths,flags,configs,parcs);
             % save the cofiguration variables for this run
             configFile=fullfile(paths.subject,sprintf('configs_DWI_B_%s.mat',datestr(now,'yyyymmdd')));
             if exist(configFile,'file')
