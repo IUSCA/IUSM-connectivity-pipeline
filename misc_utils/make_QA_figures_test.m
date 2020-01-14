@@ -5,7 +5,7 @@
 %  the level of the modality directories.
 %
 %  Requirements:
-%       A system_and_sample_set_up.m script used to process the data, with
+%       A system_and_sample_set_up.m script used to process the data, and
 %       the subjectList containing IDs for which figures are to be
 %       generated.
 %
@@ -15,12 +15,13 @@
 % USER INPUT:
 % system and sample set up file
 clearvars
-sssu = '/gpfs/home/e/c/echumin/Carbonate/system_and_sample_set_up_template.m';
+sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_template.m';
 %
 % Set to 1 the modalities you wish to create QA figures for:
 section.T1brainmask = 0;
-section.T1regparc = 0;
-section.EPI = 1;
+section.T1reg = 1;
+section.T1parc = 0;
+section.EPI = 0;
 %
 %%
 run(sssu);
@@ -31,7 +32,7 @@ for k=1:length(subjectList)
     if section.T1brainmask == 1
     disp(subjectList(k).name)
     paths.subject=fullfile(paths.data,subjectList(k).name); % path to subject
-    paths.QAdir=fullfile(paths.subject,'QA_figures'); %output directory
+    paths.QAdir=fullfile(paths.subject,'QC_figures'); %output directory
     if ~exist(paths.QAdir,'dir')
         mkdir(paths.QAdir) % make output directory if it doesn't exist
     end
@@ -39,8 +40,11 @@ for k=1:length(subjectList)
     %% 1-brain_mask_on_fov_denoised
     % Set paths and filenames
     Subj_T1=fullfile(paths.subject,configs.name.T1);
-    T1=MRIread(fullfile(Subj_T1,'T1_fov_denoised.nii'));
-    mask=MRIread(fullfile(Subj_T1,'T1_brain_mask_filled.nii.gz'));
+    T1fpath=fullfile(Subj_T1,'T1_fov_denoised.nii');
+    maskfpath=fullfile(Subj_T1,'T1_brain_mask_filled.nii.gz');
+    if isfile(T1fpath) && isfile(maskfpath)
+    T1=MRIread(T1fpath);
+    mask=MRIread(maskfpath);    
     % Select representative slices from T1 volume
     midslice=round(size(T1.vol,3)/2);
     slices=[midslice-30 midslice-15 midslice midslice+25 midslice+40];
@@ -76,9 +80,12 @@ for k=1:length(subjectList)
     end 
     print(fileout,'-dpng','-r600')
     close all
+    else
+        disp('no T1_fov_denoised and/or T1_brain_mask found.')
+    end
     end
     
-    if section.T1regparc == 1
+    if section.T1reg == 1
     %% 2-T1-warped_contour_onMNI
     % read in template and subject data
     disp(subjectList(k).name)
@@ -88,8 +95,10 @@ for k=1:length(subjectList)
     if ~exist(paths.QAdir,'dir')
         mkdir(paths.QAdir) % make output directory if it doesn't exist
     end
+    T1mnifile = fullfile(Subj_T1,'registration','T1_warped.nii.gz');
+    if exist(T1mnifile,'file')
     T1mni=MRIread(fullfile(Subj_T1,'registration','T1_warped.nii.gz'));
-    halfmaxT1=.5*(max(max(max(T1mni.vol))));
+    upperT1=.75*(max(max(max(T1mni.vol))));
     MNIt=MRIread(MNI);
     filename=fullfile(paths.QAdir,'2-T1_warped_contour_onMNI.gif');
     count=length(dir(strcat(filename(1:end-4),'*')));
@@ -104,7 +113,7 @@ for k=1:length(subjectList)
         % overlay contour image of subject MNI space transforment T1
         contour(MNIt.vol(:,:,n),'LineWidth',1,'LineColor','r','LineStyle','-')
         set(gca,'XTickLabel',[],'YTickLabel',[])
-        caxis([0 halfmaxT1])
+        caxis([0 upperT1])
         title(sprintf('%s: MNI space T1 with MNI template contour overlay',subjectList(k).name),'Interpreter','none')
         drawnow
         % convert plots into iamges
@@ -119,7 +128,11 @@ for k=1:length(subjectList)
         end
     end
     close all
-    
+    else
+        fprintf('%s: No T1_warped.nii.gz found.\n',subjectList(k).name)
+    end
+    end
+    if section.T1parc == 1
     %% 3-GM_parc_on_fov_denoised
     % get a list of parcellation files
     parcs=dir(fullfile(Subj_T1,'T1_GM_parc*'));

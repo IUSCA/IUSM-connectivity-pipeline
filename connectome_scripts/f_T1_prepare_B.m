@@ -291,12 +291,18 @@ if flags.T1.parc==1
             MaxID = max(max(max(volParc.vol)));
             volSubcort=MRIread(fileSubcort);
             volSubcort.vol(volSubcort.vol==16)=0;
-            ids=unique(volSubcort.vol);
-            for s=1:length(ids)
-                if ids(s)>0
-                    volSubcort.vol(volSubcort.vol==ids(s))=MaxID+(s-1);
+            %----------------------------------------------------------%
+            if parcs.pnodal(k).true == 1 
+                ids=unique(volSubcort.vol);
+                for s=1:length(ids)
+                    if ids(s)>0
+                        volSubcort.vol(volSubcort.vol==ids(s))=MaxID+(s-1);
+                    end
                 end
+            elseif parcs.pnodal(k).true == 0
+                volSubcort.vol(volSubcort.vol>0)=MaxID+1;
             end
+            %----------------------------------------------------------%
             subcorMask=volSubcort.vol > 0;
             volParc.vol(subcorMask)=0;
             volParc.vol=volParc.vol+volSubcort.vol;

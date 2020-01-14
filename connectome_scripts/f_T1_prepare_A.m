@@ -16,18 +16,17 @@ function [paths,flags,configs]=f_T1_prepare_A(paths,flags,configs)
 
 %% Dicom to NiFTI
 if flags.T1.dcm2niix==1
+    % set dicom directy and identify file extension
     paths.T1.dcm = fullfile(paths.T1.dir,configs.name.dcmFolder);
-    list_dicoms = dir(fullfile(paths.T1.dcm,sprintf('*.%s',configs.name.dcmFiles)));
-    list_nii = dir(fullfile(paths.T1.dir,sprintf('*.%s',configs.name.niiFiles)));
-    list_niigz = dir(fullfile(paths.T1.dir,sprintf('*.%s.gz',configs.name.niiFiles)));
-%    % Identify dicom format
-    if size(list_dicoms,1) == 0
-       warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
-       return
+    [dcm_ext]=find_dcm_ext(paths.T1.dcm);
+    if isempty(dcm_ext)
+        warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
+        return
     end
+    list_nii = dir(fullfile(paths.T1.dir,'*.nii*'));
     % Remove existing nifti images.
-    if size(list_nii,1) || size(list_niigz,1) >= 1
-        sentence = sprintf('rm %s/*%s*',paths.T1.dir,configs.name.niiFiles);
+    if size(list_nii,1) >= 1
+        sentence = sprintf('rm %s/*.nii*',paths.T1.dir);
         [~,result] = system(sentence); %#ok<*ASGLU>
     end
     % Convert dicom to nifti.

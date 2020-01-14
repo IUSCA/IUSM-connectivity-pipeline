@@ -1,4 +1,4 @@
-function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set_up, batch_path, pipeline_path, email)
+function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set_up, batch_path, pipeline_path, ppn, vmem, walltime, email)
 % PBS and matlab wrapper generation script for Karst submissions
 %
 %  Author:  John D. West - jdwest@iupui.edu  5/24/2018
@@ -26,6 +26,9 @@ function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set
 %       -batch_path ->  path to directory where you want the PBS jobs
 %                       placed.
 %       -pipeline_path -> path to IUSM-connectivity-pipeline directory
+%       -ppn ->         processes per node
+%       -wmem ->        RAM memory
+%       -walltime ->    max alloted job runtime
 %       -email ->       contact email for notifications of job status.
 %
 %  You can find templates of the batch and system set up scripts in the 
@@ -41,7 +44,7 @@ if ~exist(batch_path,'dir')
 end
 
 numsubjects = length(subjectfolders);
-numPBS = floor(numsubjects/14); % Grabs number of loops needed to generate PBSscripts
+numPBS = floor(numsubjects/7); % Grabs number of loops needed to generate PBSscripts
 
 % Generate PBS scripts and wrappers for majority of subjects
 if numPBS+1>1
@@ -49,7 +52,7 @@ if numPBS+1>1
         subjectsforloop(1:7) = subjectfolders((i*7-7+1):i*7);
         fidpbs = fopen([batch_path '/PBSconnectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name],'w');
         fprintf(fidpbs, '#!/bin/bash\n');
-        fprintf(fidpbs, '#PBS -l nodes=1:ppn=4,vmem=32gb,walltime=3:00:00\n');
+        fprintf(fidpbs, ['#PBS -l nodes=1:ppn=' num2str(ppn) ',vmem=' num2str(vmem) 'gb,walltime=' num2str(walltime) ':00:00\n']);
         fprintf(fidpbs, ['#PBS -M ' email '\n']);
         fprintf(fidpbs, '#PBS -m abe\n');
         fprintf(fidpbs, ['#PBS -N connectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name '\n']);
@@ -64,9 +67,8 @@ if numPBS+1>1
         fprintf(fidpbs, 'module unload matlab\n');
         fprintf(fidpbs, 'module load matlab/2019a\n');
         fprintf(fidpbs, 'module load java\n');
-        fprintf(fidpbs, 'module load camino\n');
         fprintf(fidpbs, 'module load ants\n');
-        fprintf(fidpbs, 'module load camino-trackvis\n\n');
+        fprintf(fidpbs, 'module load mrtrix/3.0\n\n');
         fprintf(fidpbs, ['cd ' batch_path '\n\n']);        
         fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(7).name ' &\n\n']);
         fprintf(fidpbs, 'wait\n');
@@ -99,7 +101,7 @@ numsubjectsremain = length(subjectsremain); % finds number of last subjects
 if numsubjectsremain>0
     fidpbs = fopen([batch_path '/PBSconnectome_' subjectsremain(1).name 'to' subjectsremain(end).name],'w');
     fprintf(fidpbs, '#!/bin/bash\n');
-    fprintf(fidpbs, '#PBS -l nodes=1:ppn=4,vmem=32gb,walltime=3:00:00\n');
+    fprintf(fidpbs, ['#PBS -l nodes=1:ppn=' num2str(ppn) ',vmem=' num2str(vmem) 'gb,walltime=' num2str(walltime) ':00:00\n']);
     fprintf(fidpbs, ['#PBS -M ' email '\n']);
     fprintf(fidpbs, '#PBS -m abe\n');
     fprintf(fidpbs, ['#PBS -N connectome_' subjectsremain(1).name 'to' subjectsremain(end).name '\n']);
@@ -114,9 +116,8 @@ if numsubjectsremain>0
     fprintf(fidpbs, 'module unload matlab\n');
     fprintf(fidpbs, 'module load matlab/2019a\n');
     fprintf(fidpbs, 'module load java\n');
-    fprintf(fidpbs, 'module load camino\n');
     fprintf(fidpbs, 'module load ants\n');
-    fprintf(fidpbs, 'module load camino-trackvis\n\n');
+    fprintf(fidpbs, 'module load mrtrix/3.0\n\n');
     fprintf(fidpbs, ['cd ' batch_path '\n\n']);
     fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsremain(1).name 'to' subjectsremain(end).name ' &\n\n']);
     fprintf(fidpbs, 'wait\n');
