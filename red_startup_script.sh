@@ -24,3 +24,5 @@ module load matlab/2019a
 module unload ants
 module load ants
 
+#load mrtrix
+module load mrtrix/3.0
