@@ -10,37 +10,70 @@
 #
 ###############################################################################
 
+############################################################################### 
+
+function add_subcort_parc() {
+path="$1" ${python3_7} - <<END
+
+import os.path
+import numpy as np
+import nibabel as nib
+
+
+parcpath=os.environ['path']
+print(parcpath)
+
+head_tail = os.path.split(parcpath)
+
+print(head_tail[0])
+print(head_tail[1])
+
+fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii.gz'])
+print(fileSubcort)
+
+parc = nib.load(parcpath)
+parc_vol = parc.get_data()
+#print(parc_vol.shape)
+MaxID = np.max(parc_vol)
+#print(MaxID)
+
+subcort = nib.load(fileSubcort)
+subcort_vol = subcort.get_data()
+#ind = np.argwhere(subcort_vol == 16)
+#print(ind)
+
+subcort_vol[subcort_vol == 16] = 0
+#ind = np.argwhere(subcort_vol == 16)
+#print(ind)
+
+ids = np.unique(subcort_vol)
+#print(ids)
+
+for s in range(0,len(ids)):
+    #print(ids[s]) 
+    if ids[s] > 0:
+        subcort_vol[subcort_vol == ids[s]] = MaxID + s
+
+
+parc_vol[subcort_vol > 0] = 0
+parc_vol = np.squeeze(parc_vol) + subcort_vol
+
+#fileOut = ''.join([head_tail[0],'/this_is_a_test.nii'])
+parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
+nib.save(parc_vol_new,parcpath)
+
+END
+}
+
+
+###################################################################################
+
+
+
+
 shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-
-# # get the whole call
-# cmdLineCall=$(echo "$0 $@")
-
-# # read in args
-# while (( $# > 1 )) ; do
-#     case "$1" in
-# 		-np | --numparc) shift
-# 			numParcs="${1}" ; 
-#             echo "${numParcs} parcellations to use"
-# 			shift
-# 			;;
-# 		# -o | --out) shift
-# 		# 	OUTbasedir="${1}"
-# 		# 	shift
-# 		# 	;;
-#         -*)
-#             echo "ERROR: Unknown option '$1'"
-#             exit 1
-#             break
-#             ;;
-#         *)
-#             break
-#             ;;
-#      esac
-# done
-
-# shift "$((OPTIND-1))" # Shift off the options and optional
 
 
 ##### Registration of subject to MNI######
@@ -545,20 +578,7 @@ if ${flags_T1_parc}; then
         log $cmd
         eval $cmd 
 
-        #-------------------------------------------------------------------------#
-        # 07.26.2017 EJC Dilate the final GM parcellations. 
-        # NOTE: These are different from those removed above, because they are
-        # true single modal dilations. They will be used by
-        # f_functiona_connectivity to bring parcellations into epi space.
 
-        fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
-        cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
-        log $cmd
-        eval $cmd 
-        exitcode=$?
-        if [[ ${exitcode} -ne 0 ]]; then
-            echoerr "Dilation of ${parc} parcellation error! Exist status is ${exitcode}."
-        fi
 
         if [ "${pcort}" -eq 1 ]; then
 
@@ -576,7 +596,7 @@ if ${flags_T1_parc}; then
             log $cmd
             eval $cmd 
 
-            cmd="fslmaths ${fileOut} -mul ${fileMas} ${fileOut}"
+            cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
             log $cmd
             eval $cmd 
 
@@ -681,7 +701,38 @@ if ${flags_T1_parc}; then
             log "rm -vf ${FileOut2}"
             rm -vf ${FileOut2}*
 
+            log "rm -vf ${T1path}/L_cerebellum_*"
+            rm -vf ${T1path}/L_cerebellum_*
+
+            log "rm -vf ${T1path}/R_cerebellum_*"
+            rm -vf ${T1path}/R_cerebellum_*  
+
+            ## Add subcortical fsl parcellation to cortical parcellations
+            if ${configs_T1_addsubcort}; then 
+
+                log "ADD_SUBCORT_PARC using ${FileIn}"
+                # call python script
+                add_subcort_parc ${FileIn}
+
+            fi 
+
+            #-------------------------------------------------------------------------#
+            # 07.26.2017 EJC Dilate the final GM parcellations. 
+            # NOTE: They will be used by f_functiona_connectivity
+            #  to bring parcellations into epi space.
+
+            fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+            cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
+            log $cmd
+            eval $cmd 
+            exitcode=$?
+            if [[ ${exitcode} -ne 0 ]]; then
+                echoerr "Dilation of ${parc} parcellation error! Exist status is ${exitcode}."
+            fi          
+
         fi 
+
+
 
     done
 

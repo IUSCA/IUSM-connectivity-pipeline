@@ -29,6 +29,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     path_EPI_GREphasedcm="${path_EPI_SEFM}/${configs_GREphasedcm}"
 
     if [[ -d ${path_EPI_SEFM} ]]; then
+
+        fileInAP="${path_EPI_SEFM}/AP.nii.gz"
+        fileInPA="${path_EPI_SEFM}/PA.nii.gz"
         
         if [ -d "${path_EPI_APdcm}" ] && [ -d "${path_EPI_PAdcm}" ]; then
 
@@ -67,8 +70,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 eval $cmd 
             fi 
 
-            fileInAP="${path_EPI_SEFM}/AP.nii.gz"
-            fileInPA="${path_EPI_SEFM}/PA.nii.gz"
             cmd="fslmerge -tr ${fileOut} ${fileInAP} ${fileInPA} ${TR}"
             log $cmd
             eval $cmd 

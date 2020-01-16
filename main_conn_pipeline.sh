@@ -32,12 +32,6 @@ export python3_7="${EXEDIR}/../miniconda3/bin/python3.7"
 
 
 #################################################################################
-# TODO -- List and loop through all subjects
-## Not sure if this loop should be in a wrapper script that would allow running subjects in parallel.  
-export SUBJ="10692_1"
-export T1path="${path2data}/${SUBJ}/${configs_T1}"
-export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
-export EPItemp="${path2data}/${SUBJ}/EPI"
 #################################################################################
 
 
@@ -45,6 +39,149 @@ export EPItemp="${path2data}/${SUBJ}/EPI"
 main() {
 
 start=`date +%s`
+
+log "SUBJECTS running Connectivity Pipeline on the following subjects:"
+
+find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n'
+
+######################################################################################################
+#### START PROCESSING SUBJECTS ###############
+## Not sure if this loop should be in a wrapper script that would allow running subjects in parallel.  
+
+find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
+
+    echo "$SUBJdir"
+    
+    export SUBJ=$(basename "${SUBJdir}")
+    
+    echo "${SUBJ}"
+
+    export T1path="${path2data}/${SUBJ}/${configs_T1}"
+    export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
+    export EPItemp="${path2data}/${SUBJ}/${configs_epiFolder}"
+ 
+
+    log "# ############################ T1_PREPARE_A #####################################"
+
+        if $T1_PREPARE_A; then
+
+            cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh" # -d ${PWD}/inputdata/dwi.nii.gz \
+            echo $cmd
+            eval $cmd
+            exitcode=$?
+
+            if [[ ${exitcode} -ne 0 ]] ; then
+                echoerr "problem at T1_PREPARE_A. exiting."
+                exit 1
+            fi
+        else 
+            log "SKIP T1_PREPARE_A for subject $SUBJ"
+        fi 
+
+    ######################################################################################
+    log "# ############################ T1_PREPARE_B #####################################"
+
+
+        if $T1_PREPARE_B; then
+
+            if [[ -d "$T1path" ]]; then 
+
+                cmd="${EXEDIR}/src/scripts/t1_prepare_B.sh" # -np ${numParcs} -d ${PWD}/inputdata/dwi.nii.gz \
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at T1_PREPARE_B. exiting."
+                    exit 1
+                fi
+                        
+            else
+                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+            fi
+        else
+            log "SKIP T1_PREPARE_B for subject $SUBJ"
+        fi 
+
+    ######################################################################################
+    log "# ############################ fMRI_A ###########################################"
+
+
+        if $fMRI_A; then
+
+            if [[ -d "$T1path" ]]; then 
+
+                cmd="${EXEDIR}/src/scripts/fMRI_A.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A. exiting."
+                    exit 1
+                fi
+                        
+            else
+                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+            fi
+        else
+            log "SKIP fMRI_A for subject $SUBJ"
+        fi 
+
+    ######################################################################################
+    log "# ############################ fMRI_B ##########################################"
+
+    ## Generates all the figures. Can still be called from Matlab for now...?
+
+
+    ######################################################################################
+    log "# ############################ DWI_A ############################################"
+
+
+        if $DWI_A; then
+
+            if [[ -d "${DWIpath}" ]]; then 
+
+                cmd="${EXEDIR}/src/scripts/DWI_A.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at DWI_A. exiting."
+                    exit 1
+                fi
+                        
+            else
+                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+            fi
+        else
+            log "SKIP DWI_A for subject $SUBJ"
+        fi 
+
+    # ################################################################################
+    # ################################################################################
+
+        ## time it
+        end=`date +%s`
+        runtime=$((end-start))
+        log "SUBJECT $SUBJ runtime: $runtime"
+
+done    
+
+} # main
+
+# ################################################################################
+# ################################################################################
+# ## run it
+
+main "$@"
+
+
+
+
+
+
 
     # # get the whole call
     # cmdLineCall=$(echo "$0 $@")
@@ -101,118 +238,5 @@ start=`date +%s`
 # ## run it
 
 ######################################################################################
-log "# ############################ T1_PREPARE_A #####################################"
-
-    if $T1_PREPARE_A; then
-
-        cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh" # -d ${PWD}/inputdata/dwi.nii.gz \
-        echo $cmd
-        eval $cmd
-        exitcode=$?
-
-        if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at T1_PREPARE_A. exiting."
-            exit 1
-        fi
-    else 
-        log "SKIP T1_PREPARE_A for subject $SUBJ"
-    fi 
-
-######################################################################################
-log "# ############################ T1_PREPARE_B #####################################"
-
-
-    if $T1_PREPARE_B; then
-
-        if [[ -d "$T1path" ]]; then 
-
-            cmd="${EXEDIR}/src/scripts/t1_prepare_B.sh" # -np ${numParcs} -d ${PWD}/inputdata/dwi.nii.gz \
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at T1_PREPARE_B. exiting."
-                exit 1
-            fi
-                    
-        else
-            echo "T1 directory doesn't exist; skipping subject $SUBJ"
-        fi
-    else
-        log "SKIP T1_PREPARE_B for subject $SUBJ"
-    fi 
-
-######################################################################################
-log "# ############################ fMRI_A ###########################################"
-
-
-    if $fMRI_A; then
-
-        if [[ -d "$T1path" ]]; then 
-
-            cmd="${EXEDIR}/src/scripts/fMRI_A.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at fMRI_A. exiting."
-                exit 1
-            fi
-                    
-        else
-            echo "T1 directory doesn't exist; skipping subject $SUBJ"
-        fi
-    else
-        log "SKIP fMRI_A for subject $SUBJ"
-    fi 
-
-######################################################################################
-log "# ############################ fMRI_B ##########################################"
-
-## Generates all the figures. Can still be called from Matlab for now...?
-
-
-######################################################################################
-log "# ############################ DWI_A ############################################"
-
-
-    if $DWI_A; then
-
-        if [[ -d "${DWIpath}" ]]; then 
-
-            cmd="${EXEDIR}/src/scripts/DWI_A.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at DWI_A. exiting."
-                exit 1
-            fi
-                    
-        else
-            echo "T1 directory doesn't exist; skipping subject $SUBJ"
-        fi
-    else
-        log "SKIP DWI_A for subject $SUBJ"
-    fi 
-
-# ################################################################################
-# ################################################################################
-
-    ## time it
-    end=`date +%s`
-    runtime=$((end-start))
-    log "runtime: $runtime"
-
-} # main
-
-# ################################################################################
-# ################################################################################
-# ## run it
-
-main "$@"
 
 

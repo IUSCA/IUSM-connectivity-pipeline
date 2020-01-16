@@ -42,28 +42,30 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         ## if 0_param_dcm_hdr.sh exists, remove it
         if [ -e "${EPIpath}/0_param_dcm_hdr.sh" ]; then
             rm ${EPIpath}/0_param_dcm_hdr.sh
-        else
-            touch ${EPIpath}/0_param_dcm_hdr.sh
-            chmod +x ${EPIpath}/0_param_dcm_hdr.sh
-        fi                        
+        fi 
+
+        # create the file and make it executable
+        touch ${EPIpath}/0_param_dcm_hdr.sh
+        chmod +x ${EPIpath}/0_param_dcm_hdr.sh                      
 
         dcm2niix_json_loc="${EPIpath}/0_epi.json"
 
-        EPI_slice_fractimes=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.SliceTiming'`
-        #echo "export EPI_slice_fractimes=${EPI_slice_fractimes}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        TR=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.RepetitionTime'`
+        EPI_slice_fractimes=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_slice_fractimes}`
+        # echo "export EPI_slice_fractimes=${EPI_slice_fractimes}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        log "SliceTiming extracted from header is $EPI_slice_fractimes"
+        TR=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TR}`
         log "RepetitionTime extracted from header is $TR"
         echo "export TR=${TR}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        TE=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.EchoTime'`
+        TE=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TE}`
         log "EchoTime extracted from header is $TE"
         echo "export TE=${TE}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        EPI_FlipAngle=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.FlipAngle'`
+        EPI_FlipAngle=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_FlipAngle}`
         log "FlipAngle extracted from header is $EPI_FlipAngle"
         echo "export EPI_FlipAngle=${EPI_FlipAngle}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        EPI_EffectiveEchoSpacing=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.EffectiveEchoSpacing'`
+        EPI_EffectiveEchoSpacing=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_EffectiveEchoSpacing}`
         log "EffectiveEchoSpacing extracted from header is $EPI_EffectiveEchoSpacing"    
         echo "export EPI_EffectiveEchoSpacing=${EPI_EffectiveEchoSpacing}" >> ${EPIpath}/0_param_dcm_hdr.sh                                                        
-        EPI_BandwidthPerPixelPhaseEncode=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 '.BandwidthPerPixelPhaseEncode'`
+        EPI_BandwidthPerPixelPhaseEncode=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_BandwidthPerPixelPhaseEncode}`
         log "BandwidthPerPixelPhaseEncode extracted from header is $EPI_BandwidthPerPixelPhaseEncode"
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
@@ -80,9 +82,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         # starr=("${starr[@]:1:$((${#starr[@]}-36))}") ##DELETE THIS LINE                    
         # ###########################################################
 
-        EPI_n_slice=${#starr[@]}
-        log "SliceTiming extracted from header; number of slices: ${EPI_n_slice}"
-        echo "export EPI_n_slice=${EPI_n_slice}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        n_slice=${#starr[@]}
+        log "SliceTiming extracted from header; number of slices: ${n_slice}"
+        echo "export n_slice=${n_slice}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
         printf "%f\n" "${starr[@]}" > "${EPIpath}/temp.txt"                    
                             
@@ -108,7 +110,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         out=`$cmd`                
         TR=( $out )  # make it an array
         TR=$(bc <<< "scale=2; ${TR[1]} / 1000")
-        echo "Header extracted TR: ${TR}"
+        log "-HEADER extracted TR: ${TR}"
         echo "export TR=${TR}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
     #-------------------------------------------------------------------------%
@@ -116,13 +118,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         dcm_file=${dicom_files[0]}
         cmd="dicom_hinfo -no_name -tag 0019,100a ${dcm_file}"
         log $cmd
-        n_slices=`$cmd`
-        echo "Header extracted number of slices: $n_slices"
-        echo "export n_slices=${n_slices}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        n_slice=`$cmd`
+        log "-HEADER extracted number of slices: $n_slice"
+        echo "export n_slice=${n_slice}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
         id1=6
-        id2=$(bc <<< "${id1} + ${n_slices}")
-        echo "id2 is $id2"
+        id2=$(bc <<< "${id1} + ${n_slice}")
+        log "id2 is $id2"
 
         cmd="dicom_hdr -slice_times ${dcm_file}"  
         log $cmd
@@ -153,28 +155,28 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         log $cmd
         out=`$cmd`
         TE=`echo $out | awk -F' ' '{ print $2}'`
-        echo "Header extracted TE is: ${TE}" 
+        echo "HEADER extracted TE is: ${TE}" 
         echo "export TE=${TE}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
     fi
     
-    ##esp
+    # ##esp
     
-    dcm_file=${dicom_files[0]}
-    cmd="dicom_hinfo -tag 0043,102c ${dcm_file}"
-    log $cmd
-    out=`$cmd`
-    esp=`echo $out | awk -F' ' '{ print $2}'`
-    echo "Header extracted TE is: ${esp}" 
-    echo "export esp=${esp}" >> ${EPIpath}/0_param_dcm_hdr.sh
+    # dcm_file=${dicom_files[0]}
+    # cmd="dicom_hinfo -tag 0043,102c ${dcm_file}"
+    # log $cmd
+    # out=`$cmd`
+    # esp=`echo $out | awk -F' ' '{ print $2}'`
+    # echo "Header extracted TE is: ${esp}" 
+    # echo "export esp=${esp}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
-    ## asset
-    cmd="dicom_hinfo -tag 0043,1083 ${dcm_file}"                    
-    log $cmd 
-    out=`$cmd`                
-    asset=`echo $out | awk -F' ' '{ print $2}'`
-    echo "Header extracted asset is: ${asset}" 
-    echo "export asset=${asset}" >> ${EPIpath}/0_param_dcm_hdr.sh
+    # ## asset
+    # cmd="dicom_hinfo -tag 0043,1083 ${dcm_file}"                    
+    # log $cmd 
+    # out=`$cmd`                
+    # asset=`echo $out | awk -F' ' '{ print $2}'`
+    # echo "Header extracted asset is: ${asset}" 
+    # echo "export asset=${asset}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
     #-------------------------------------------------------------------------%
     # Config params are all saved in ${EPIpath}/0_param_dcm_hdr.sh     

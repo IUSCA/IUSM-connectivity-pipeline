@@ -259,24 +259,70 @@
 # # ------------------------------------------------------------
 # ##### DWI_A - EDDY- last section
 
-import os
+# import os
+# import numpy as np
+# import nibabel as nib
+
+
+# DWIpath='/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI'
+
+# fname=''.join([DWIpath,'/0_DWI.nii.gz'])
+# DWI=nib.load(fname) 
+# DWI_vol = DWI.get_data()
+
+# fname=''.join([DWIpath,'/EDDY/eddy_output'])
+# corrDWI=nib.load(fname)
+# corrDWI_vol = corrDWI.get_data()
+
+# corrDWI_vol = corrDWI_vol - DWI_vol
+
+
+# fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI/EDDY/delta_DWI.nii.gz'
+# corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
+# nib.save(corrDWI_new,fileOut)
+
+import os.path
 import numpy as np
 import nibabel as nib
 
 
-DWIpath='/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI'
+parcpath='/N/dc2/projects/connectivitypipeline/example_for_matt/matlab_outputs/T1/T1_GM_parc_yeo17_MNI152.nii'
 
-fname=''.join([DWIpath,'/0_DWI.nii.gz'])
-DWI=nib.load(fname) 
-DWI_vol = DWI.get_data()
+head_tail = os.path.split(parcpath)
 
-fname=''.join([DWIpath,'/EDDY/eddy_output'])
-corrDWI=nib.load(fname)
-corrDWI_vol = corrDWI.get_data()
+print(head_tail[0])
+print(head_tail[1])
 
-corrDWI_vol = corrDWI_vol - DWI_vol
+fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii'])
+print(fileSubcort)
+
+parc = nib.load(parcpath)
+parc_vol = parc.get_data()
+print(parc_vol.shape)
+MaxID = np.max(parc_vol)
+print(MaxID)
+
+subcort = nib.load(fileSubcort)
+subcort_vol = subcort.get_data()
+ind = np.argwhere(subcort_vol == 16)
+print(ind)
+
+subcort_vol[subcort_vol == 16] = 0
+ind = np.argwhere(subcort_vol == 16)
+print(ind)
+
+ids = np.unique(subcort_vol)
+print(ids)
+
+for s in range(0,len(ids)):
+    print(ids[s]) 
+    if ids[s] > 0:
+        subcort_vol[subcort_vol == ids[s]] = MaxID + s
 
 
-fileOut = '/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI/EDDY/delta_DWI.nii.gz'
-corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
-nib.save(corrDWI_new,fileOut)
+parc_vol[subcort_vol > 0] = 0
+parc_vol = np.squeeze(parc_vol)+subcort_vol
+
+fileOut = '/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/T1/T1_GM_parc_yeo17_MNI152_test.nii'
+parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
+nib.save(parc_vol_new,fileOut)
