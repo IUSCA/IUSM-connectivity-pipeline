@@ -182,6 +182,9 @@ flags.EPI.NuisanceReg = 2;
     % 1 - ICA-based denoising; WARNING: This will smooth your data.
     % 2 - Head Motion Parameter Regression
         configs.EPI.numReg = 24; % 12 (orig and deriv) or 24 (+ sq of 12)
+        configs.EPI.scrub = 1; % perform scrubbing based on FD and DVARS criteria
+            configs.EPI.FDcut = []; % [] uses fsl outlier critera
+            configs.EPI.DVARScut = [];
     flags.EPI.PhysReg = 2; %physiological regressors
         % 1 - aCompCorr; PCA based CSF and WM signal regression (up to 5
         %     components)
@@ -189,7 +192,7 @@ flags.EPI.NuisanceReg = 2;
         % 2 - mean WM and CSF signal regression
             configs.EPI.numPhys = 8; % 2-orig; 4-orig+deriv; 8-orig+deriv+sq
     flags.EPI.GS = 1; % global signal regression 
-        configs.EPI.numGS = 4; % 1-orig; 2-orig+deriv; 4-orig+deriv+sq        
+        configs.EPI.numGS = 4; % 1-orig; 2-orig+deriv; 4-orig+deriv+sq 
 flags.EPI.DemeanDetrend = 1;
 flags.EPI.BandPass = 1;
     configs.EPI.fMin = .009;
