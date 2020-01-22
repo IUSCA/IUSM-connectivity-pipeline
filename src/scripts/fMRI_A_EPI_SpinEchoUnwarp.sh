@@ -168,6 +168,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     cmd="mv ${fileOut} ${EPIpath}/0_epi_unwarped.nii.gz"
                     log $cmd 
                     eval $cmd 
+                    exitcode=$?
+
+                    if [[ $exitcode -eq 0 ]]; then
+                        log "- -------------EPI volume unwarping completed---------------"
+                    fi
+
                 fi 
             else 
                 log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
