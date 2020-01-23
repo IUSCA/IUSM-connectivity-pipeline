@@ -139,48 +139,50 @@ echo "# =========================================================="
 
 # # -------------------------------------------------------------------------------
 
-fileMask="${EPIpath}/1_epi_brain_mask.nii.gz"
+###!!!!!!!!!!!!!! Jan 22, 2020  - this was moved to fMRI_A_EPI_MotionCorr.sh
 
-## Frame Displacement regressor
-log "# Computing DF regressor"
-# example: fsl_motion_outliers \
-# -i 4_drafREST1.nii.gz \
-# -o motionOutputFD.txt \
-# -s motionMetricsFD.txt \
-# -p motionMetricsFD.png --fd
+# fileMask="${EPIpath}/1_epi_brain_mask.nii.gz"
 
-metric="fd"
-fileIn="${EPIpath}/1_epi.nii.gz"
-fileOut="${epiGS_path}/motionRegressor_${metric}"
-fileMetrics="${epiGS_path}/motionMetric_${metric}"
+# ## Frame Displacement regressor
+# log "# Computing DF regressor"
+# # example: fsl_motion_outliers \
+# # -i 4_drafREST1.nii.gz \
+# # -o motionOutputFD.txt \
+# # -s motionMetricsFD.txt \
+# # -p motionMetricsFD.png --fd
 
-if [[ -e ${fileOut} ]]; then
-    cmd="rm ${fileOut}"
-    log $cmd 
-    eval $cmd 
-fi
+# metric="fd"
+# fileIn="${EPIpath}/1_epi.nii.gz"
+# fileOut="${epiGS_path}/motionRegressor_${metric}"
+# fileMetrics="${epiGS_path}/motionMetric_${metric}"
 
-if [[ -e ${fileMetrics} ]]; then
-    cmd="rm ${fileMetrics}"
-    log $cmd 
-    eval $cmd 
-fi
+# if [[ -e ${fileOut} ]]; then
+#     cmd="rm ${fileOut}"
+#     log $cmd 
+#     eval $cmd 
+# fi
 
-filePlot="${epiGS_path}/motionPlot_${metric}"
+# if [[ -e ${fileMetrics} ]]; then
+#     cmd="rm ${fileMetrics}"
+#     log $cmd 
+#     eval $cmd 
+# fi
 
-cmd="fsl_motion_outliers -i ${fileIn} \
--o ${fileOut} \
--s ${fileMetrics} \
--p ${filePlot} \
---${metric} --thresh=${configs_EPI_FDth} -m ${fileMask}"
-log $cmd
-eval $cmd 
+# filePlot="${epiGS_path}/motionPlot_${metric}"
 
-if [[ -e ${fileMetrics} ]] && [[ -z ${configs_EPI_FDth} ]]; then
-    out=`python -c "import numpy as np; metrics = np.loadtxt('${fileMetrics}') \
-    scrubbing_fd = metrics < ${configs_EPI_FDth}
-    print(np.count_nonzero(scrubbing_fd))"`
-fi
+# cmd="fsl_motion_outliers -i ${fileIn} \
+# -o ${fileOut} \
+# -s ${fileMetrics} \
+# -p ${filePlot} \
+# --${metric} --thresh=${configs_EPI_FDth} -m ${fileMask}"
+# log $cmd
+# eval $cmd 
+
+# if [[ -e ${fileMetrics} ]] && [[ -z ${configs_EPI_FDth} ]]; then
+#     out=`python -c "import numpy as np; metrics = np.loadtxt('${fileMetrics}') \
+#     scrubbing_fd = metrics < ${configs_EPI_FDth}
+#     print(np.count_nonzero(scrubbing_fd))"`
+# fi
 
 
 

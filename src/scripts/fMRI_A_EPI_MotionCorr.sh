@@ -15,10 +15,13 @@ shopt -s nullglob # No-match globbing expands to null
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
-               
+
+            
 echo "# ==========================================="
 echo "# 2. Motion Correction"
 echo "# ==========================================="
+
+echo "**** ${EPIpath}/1_epi.nii.gz"
 
 if [[ ! -e "${EPIpath}/1_epi.nii.gz" ]]; then  
     log "-No slice time corrected 1_epi output found"
@@ -29,22 +32,23 @@ if [[ ! -e "${EPIpath}/1_epi.nii.gz" ]]; then
         if [[ -e "${fileIn}" ]]; then 
             log " -Will use 0_epi from dicom conversion."
         else
-            log "WARNING No 0_epi inputs found..."
+            log "WARNING No 0_epi inputs found... Exiting"
             exit 1
         fi
     else
-        if ${flags_EPI_UseUnwarped}; then
-            fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
-            log " -Will use 0_epi_unwarped.nii.gz as set by UseUnwarped flag => true"
-        else
-            fileIn="${EPIpath}/0_epi.nii.gz"
-            log " -Will use 0_epi.nii.gz as set by UseUnwarped flag => false"  
-        fi 
+        fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
+        log " -Will use 0_epi_unwarped.nii.gz"
     fi 
 else
     fileIn="${EPIpath}/1_epi.nii.gz"
     log " -Will use the slice time corrected 1_epi.nii.gz as input" 
 fi 
+
+# Compute motion outliers
+cmd="${EXEDIR}/src/scripts/get_motion_outliers.sh ${EPIpath} ${fileIn}"
+log $cmd
+eval $cmd
+
 
 fileOut="${EPIpath}/2_epi"
 cmd="fslval ${fileIn} dim4"

@@ -20,17 +20,16 @@ echo "# ==========================================="
 echo "# 1. Slice Time Acquisition Correction"
 echo "# ==========================================="
 
-if [[ ! -e "${EPIpath}/0_epi_unwarped.nii.gz" ]]; then  
+if [[ -e "${EPIpath}/0_epi_unwarped.nii.gz" ]]; then  
+    fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
+    log "Processing: 0_epi_unwarped.nii.gz"
+elif [[ -e "${EPIpath}/0_epi.nii.gz" ]]; then  
     fileIn="${EPIpath}/0_epi.nii.gz"
+    log "Processing: 0_epi.nii.gz"
 else
-    if ${flags_EPI_UseUnwarped}; then 
-        fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
-        log "Processing: 0_epi_unwarped.nii.gz"
-    else
-        fileIn="${EPIpath}/0_epi.nii.gz"
-        log "Processing: 0_epi.nii.gz"
-    fi 
+    log "WARNIGN file 0_epi not found. Exiting..."    
 fi 
+
 
 cmd="fslreorient2std ${fileIn} ${fileIn}"
 log $cmd 
