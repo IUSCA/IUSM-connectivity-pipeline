@@ -1,4 +1,4 @@
-function [fd_scrub,dvars_scrub] = find_motion_outliers(path2uncorImage,path2mask,paths,configs)
+function [fd_scrub,dvars_scrub] = find_motion_outliers(path2uncorImage,paths,configs)
 
 
 
@@ -16,11 +16,11 @@ function [fd_scrub,dvars_scrub] = find_motion_outliers(path2uncorImage,path2mask
     end
     if isempty(configs.EPI.FDcut,'var')
         disp('Will use box-plot cutoff = P75 + 1.5*IQR')
-        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --fd -m %s',...
-            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,path2mask);
+        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --fd',...
+            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot);
     else
-        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --fd --thresh=%0.2f -m %s',...
-            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,configs.EPI.FDcut,path2mask);
+        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --fd --thresh=%0.2f',...
+            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,configs.EPI.FDcut);
     end
     [~,result] = system(sentence);
     disp(result)
@@ -44,11 +44,11 @@ function [fd_scrub,dvars_scrub] = find_motion_outliers(path2uncorImage,path2mask
     
     if isempty(configs.EPI.DVARScut,'var')
         disp('Will use box-plot cutoff = P75 + 1.5*IQR')
-        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --dvars -m %s',...
-            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,path2mask);
+        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --dvars',...
+            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot);
     else
-        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --dvars --thresh=%0.2f -m %s',...
-            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,configs.EPI.DVARScut,path2mask);
+        sentence = sprintf('%s/fsl_motion_outliers -i %s -o %s -s %s -p %s --dvars --thresh=%0.2f',...
+            paths.FSL,path2uncorImage,fileOut,fileMetric,filePlot,configs.EPI.DVARScut);
     end
     [~,result] = system(sentence);
     disp(result)

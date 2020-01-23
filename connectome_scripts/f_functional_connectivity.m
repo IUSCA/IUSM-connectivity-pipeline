@@ -26,7 +26,7 @@ if flags.EPI.dcm2niix == 1
     end
     % import dicoms
     fileLog= sprintf('%s/dcm2niix.log',paths.EPI.dir);
-    sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.MRIcroGL,epifile,paths.EPI.dir,paths.EPI.dcm,fileLog);
+    sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,epifile,paths.EPI.dir,paths.EPI.dcm,fileLog);
     [~,result] = system(sentence);
     sentence=sprintf('gzip -f %s/0_epi.nii',paths.EPI.dir);
     [~,result] = system(sentence);
@@ -44,8 +44,6 @@ else
     end
 end
 
-
-
 %% Read info from the headers of the dicom fMRI volumes
 if flags.EPI.ReadHeaders==1
     paths.EPI.dcm = fullfile(paths.EPI.dir,configs.name.dcmFolder);
@@ -54,13 +52,14 @@ if flags.EPI.ReadHeaders==1
 %-------------------------------------------------------------------------%
     % Identify dicoms
     jsonFile=fullfile(paths.EPI.dir, '0_epi.json');
-    dcmext = strcat('*.',configs.name.dcmFiles); % search for '*.dcm' or '*.IMA'
-    dicom_files = dir(fullfile(paths.EPI.dcm,dcmext));
-    if size(dicom_files,1) == 0 && ~exist(jsonFile,'file')
+    [dcm_ext]=find_dcm_ext(paths.EPI.dcm);
+    dicom_files=dir(fullfile(paths.EPI.dcm,sprintf('*.%s',dcm_ext)));
+    if isempty(dcm_ext,'var') && ~exist(jsonFile,'file')
         warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
         return
-    elseif size(dicom_files,1) == 0 && exist(jsonFile,'file')
+    elseif isempty(dcm_ext,'var') && exist(jsonFile,'file')
         warning('No dicom images found. Using existing JSON information')
+        configs.EPI.json = 1;
     end
 %-------------------------------------------------------------------------%
     if configs.EPI.UseJson == 1
@@ -149,6 +148,7 @@ if flags.EPI.ReadHeaders==1
         end        
     else
         % Extract Repetition time (TR)
+        
         % Dicom header information --> Flag 0018,0080 "Repetition Time"
         [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0080 ' paths.EPI.dcm '/' dicom_files(1).name]);
         params.EPI.TR = str2double(result(strfind(result,' '):end))/1000;
@@ -241,14 +241,14 @@ if flags.EPI.SpinEchoUnwarp==1
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
             [~,result] = system(sentence); % remove any existing .nii images
             fileLog= sprintf('%s/dcm2niix_AP.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.MRIcroGL,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
+            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
             [~,result] = system(sentence); % import AP fieldmaps
 
             fileNiiPA= 'PA';
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiPA);
             [~,result] = system(sentence); % remove any existing .nii images
             fileLog= sprintf('%s/dcm2niix_PA.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.MRIcroGL,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
+            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
             [~,result] = system(sentence); % import PA fieldmaps
             
             sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
@@ -335,8 +335,8 @@ if flags.EPI.SpinEchoUnwarp==1
             end
         elseif exist(paths.EPI.GREmagdcm,'dir') && exist(paths.EPI.GREphasedcm,'dir')
             % Identify dicoms
-            dcmext = strcat('*.',configs.name.dcmFiles); % search for '*.dcm' or '*.IMA'
-            dicom_files = dir(fullfile(paths.EPI.GREmagdcm,dcmext));
+            [dcm_ext]=find_dcm_ext(paths.EPI.GREmagdcm);
+            dicom_files=dir(fullfile(paths.EPI.GREmagdcm,sprintf('*.%s',dcm_ext)));
             if size(dicom_files,1) < 2
                 warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
                 return
@@ -360,7 +360,7 @@ if flags.EPI.SpinEchoUnwarp==1
             if exist(fileMag2,'file'); delete(fileMag2); end 
             % dicom import
             fileLog= sprintf('%s/dcm2niix.log',paths.EPI.GREmagdcm);
-            sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',path2MRIcroGL,fileNm1,paths.EPI.SEFM,paths.EPI.GREmagdcm,fileLog);
+            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.EPI.SEFM,paths.EPI.GREmagdcm,fileLog);
             [~,result] = system(sentence);
             
             fileNm1 = '_e2'; % dcm2niix automatically prepends for 2nd echo images
@@ -371,8 +371,8 @@ if flags.EPI.SpinEchoUnwarp==1
             if exist(filePhaseMap1,'file'); delete(filePhaseMap1); end
             % dicom import
             fileLog=sprintf('%s/dcm2niix.log',paths.EPI.GREphasedcm);
-            sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',...
-                path2MRIcroGL,fileNm2,paths.EPI.SEFM,paths.EPI.GREphasedcm,fileLog);
+            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',...
+                paths.scripts,fileNm2,paths.EPI.SEFM,paths.EPI.GREphasedcm,fileLog);
             [~,result] = system(sentence);
             % Copy and gzip the nifti images
             if exist(filePhaseMap1,'file')
@@ -537,8 +537,7 @@ if flags.EPI.MotionCorr==1
     end
     
     % Compute motion outliers
-    fileMask = fullfile(paths.EPI.dir,'1_epi_brain_mask.nii.gz');
-    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,fileMask,paths,configs);
+    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,paths,configs);
     scrub =~sum(horzcat(fd_scrub,dvars_scrub),2);
     save(fullfile(paths.EPI.dir,'scrubbing_goodvols.mat'),'scrub')
       
