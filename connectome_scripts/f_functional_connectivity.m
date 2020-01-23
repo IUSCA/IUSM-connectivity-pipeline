@@ -537,8 +537,7 @@ if flags.EPI.MotionCorr==1
     end
     
     % Compute motion outliers
-    fileMask = fullfile(paths.EPI.dir,'1_epi_brain_mask.nii.gz');
-    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,fileMask,paths,configs);
+    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,paths,configs);
     scrub =~sum(horzcat(fd_scrub,dvars_scrub),2);
     save(fullfile(paths.EPI.dir,'scrubbing_goodvols.mat'),'scrub')
       
