@@ -36,11 +36,11 @@ END
 }
 
 ##############################################################################
-local EPIpath=$1
-local fileIn=$2
+EPIpath=$1
+fIn=$2
 
 echo "EPIpath is -- ${EPIpath}"
-echo "FileIn is -- ${fileIn}"
+echo "fIn is -- ${fIn}"
 
 # ------------------------------------------------------------------------- #
 ## Frame Displacement regressor
@@ -66,7 +66,7 @@ if [ -z ${configs_EPI_FDcut+x} ]; then  # if the variable ${configs_EPI_FDcut} i
 
     echo "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
 
-    cmd="fsl_motion_outliers -i ${fileIn} \
+    cmd="fsl_motion_outliers -i ${fIn} \
         -o ${fileOut1} \
         -s ${fileMetric} \
         -p ${filePlot} \
@@ -76,7 +76,7 @@ else   # if the variable ${configs_EPI_FDcut} exists and is different from empty
     
     echo " configs_EPI_FDcut is set to ${configs_EPI_FDcut}"
 
-   cmd="fsl_motion_outliers -i ${fileIn} \
+   cmd="fsl_motion_outliers -i ${fIn} \
     -o ${fileOut1} \
     -s ${fileMetric} \
     -p ${filePlot} \
@@ -86,6 +86,12 @@ fi
 
 echo $cmd
 eval $cmd 
+out=$?
+
+if [[ ! $out -eq 0 ]]; then
+    echo "FD exit code"
+    echo "$out"
+fi
 
 # ------------------------------------------------------------------------- #
 ## DVARS
@@ -106,7 +112,7 @@ if [ -z ${configs_EPI_DVARScut+x} ]; then
 
     echo "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
 
-    cmd="fsl_motion_outliers -i ${fileIn} \
+    cmd="fsl_motion_outliers -i ${fIn} \
         -o ${fileOut} \
         -s ${fileMetric} \
         -p ${filePlot} \
@@ -116,7 +122,7 @@ else
     
     echo " configs_EPI_FDcut is set to ${configs_EPI_DVARScut}"
 
-   cmd="fsl_motion_outliers -i ${fileIn} \
+   cmd="fsl_motion_outliers -i ${fIn} \
     -o ${fileOut} \
     -s ${fileMetric} \
     -p ${filePlot} \
@@ -126,6 +132,12 @@ fi
 
 echo $cmd
 eval $cmd 
+out=$?
+
+if [[ ! $out -eq 0 ]]; then
+    echo "Dvars exit code"
+    echo "$out"
+fi
 
 if [[ -e ${fileMetric} ]] && [[ -e ${fileOut1} ]]; then
     echo "calling f_load_motion_reg:"

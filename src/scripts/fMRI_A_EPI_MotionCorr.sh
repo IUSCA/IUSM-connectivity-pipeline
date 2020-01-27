@@ -50,6 +50,10 @@ cmd="${EXEDIR}/src/scripts/get_motion_outliers.sh ${EPIpath} ${fileIn}"
 log $cmd
 eval $cmd
 
+if [[ ! $? -eq 0 ]]; then
+    exit 1
+fi
+
 
 fileOut="${EPIpath}/2_epi"
 cmd="fslval ${fileIn} dim4"

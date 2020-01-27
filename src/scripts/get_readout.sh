@@ -76,7 +76,7 @@ END
 ###############################################################################
 
 ## Set paths and check for dicom direcotry
-local path=$1
+path=$1
 local dicomPath="${path}/DICOMS"
 #echo "get_readout -- path is -- ${dicomPath}"
 
