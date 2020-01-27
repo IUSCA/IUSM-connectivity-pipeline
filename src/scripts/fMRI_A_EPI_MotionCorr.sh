@@ -44,6 +44,7 @@ else
     log " -Will use the slice time corrected 1_epi.nii.gz as input" 
 fi 
 
+log "MotionCOrr fileIn is ${fileIn}"
 # Compute motion outliers
 cmd="${EXEDIR}/src/scripts/get_motion_outliers.sh ${EPIpath} ${fileIn}"
 log $cmd

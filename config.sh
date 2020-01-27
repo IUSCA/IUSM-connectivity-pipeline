@@ -219,9 +219,9 @@ if $fMRI_A; then
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=false
+	export flags_EPI_MotionCorr=true
 
-	export flags_EPI_RegT1=false;
+	export flags_EPI_RegT1=true;
 		export configs_EPI_epibetF=0.3000;
 		export configs_EPI_minVoxelsClust=8; # originally hardwired to 8
 

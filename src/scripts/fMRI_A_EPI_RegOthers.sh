@@ -155,18 +155,13 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         log $cmd
         eval $cmd                         
         
-##================================================================================================
-            ## UNFINISHED ##
-            
         # removal of small clusters within ROIs
         fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
         fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
         cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
-        #cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
         log $cmd
         eval $cmd 
-# ##================================================================================================
 
     elif [ ${pnodal} -eq 0 ]; then # treat as an organizational parcellation to group nodes
         # Added by MDZ; 10/06/2015
@@ -200,19 +195,15 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         -mas ${fileMul} ${fileOut}"
         log $cmd
         eval $cmd      
-
-##================================================================================================
-            ## UNFINISHED ##
             
         # removal of small clusters within ROIs
         fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
         fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
         cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
-        #cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
         log $cmd
         eval $cmd 
-##================================================================================================                                                               
+                                                               
     else
         log "WARNING the pnodal property is not specified for ${parc} parcellation.\
         Transformation to EPI not done"
