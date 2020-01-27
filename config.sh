@@ -160,6 +160,7 @@ if $T1_PREPARE_B; then
 	# registration flags
 	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=false
+		export configs_T1_useMNIbrain=false
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
 	export flags_T1_seg=true		
@@ -218,13 +219,13 @@ if $fMRI_A; then
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=true
+	export flags_EPI_MotionCorr=false
 
 	export flags_EPI_RegT1=false;
 		export configs_EPI_epibetF=0.3000;
 		export configs_EPI_minVoxelsClust=8; # originally hardwired to 8
 
-	export flags_EPI_RegOthers=false;
+	export flags_EPI_RegOthers=true;
 		export configs_EPI_GMprobthr=0.2; # Threshold the GM probability image
 										# change from 0.25 to 0.2 or 0.15
 

@@ -13,7 +13,7 @@
 ############################################################################### 
 
 function add_subcort_parc() {
-path="$1" ${python3_7} - <<END
+path="$1" pnodal="$2" ${python3_7} - <<END
 
 import os.path
 import numpy as np
@@ -21,7 +21,11 @@ import nibabel as nib
 
 
 parcpath=os.environ['path']
-print(parcpath)
+print("parcpath is: ",parcpath)
+
+pnodal=int(os.environ['pnodal'])
+print("pnodal is: ",pnodal)
+print(type(pnodal))
 
 head_tail = os.path.split(parcpath)
 
@@ -46,13 +50,18 @@ subcort_vol[subcort_vol == 16] = 0
 #ind = np.argwhere(subcort_vol == 16)
 #print(ind)
 
-ids = np.unique(subcort_vol)
-#print(ids)
+if pnodal == 1:
+    print("pnodal is 1")
+    ids = np.unique(subcort_vol)
+    print(ids)
 
-for s in range(0,len(ids)):
-    #print(ids[s]) 
-    if ids[s] > 0:
-        subcort_vol[subcort_vol == ids[s]] = MaxID + s
+    for s in range(0,len(ids)):
+        #print(ids[s]) 
+        if ids[s] > 0:
+            subcort_vol[subcort_vol == ids[s]] = MaxID + s
+elif pnodal == 0:
+    print("pnodal is 0")
+    subcort_vol[subcort_vol > 0] = MaxID + 1
 
 
 parc_vol[subcort_vol > 0] = 0
@@ -239,6 +248,7 @@ if ${flags_T1_reg2MNI}; then
         parc="${!parc}"
         echo ${parc}
         parcdir="PARC${i}dir"
+        
         if [[ $i -eq 0 ]]; then  # CSF is PARC0
             parcdir="${!parcdir}"
             echo ${parcdir}
@@ -271,7 +281,8 @@ if ${flags_T1_reg2MNI}; then
                 exit 1
             fi 
 
-            fileIn="${fileOut}"
+            # inv dof 12
+            fileIn="${T1reg}/${parc}_unwarped.nii.gz"
             fileRef="${T1reg}/T1_dof6.nii.gz"
             fileOut="${T1reg}/${parc}_unwarped_dof12.nii.gz"
 
@@ -292,8 +303,14 @@ if ${flags_T1_reg2MNI}; then
                 exit 1
             fi 
 
-            fileIn="${fileOut}"
-            fileRef="${T1path}/T1_fov_denoised.nii"
+            # inv dof 6
+            fileIn="${T1reg}/${parc}_unwarped_dof12.nii.gz"
+            if ${configs_T1_useMNIbrain}; then
+                fileRef="${T1path}/T1_brain.nii.gz"
+            else
+                fileRef="${T1path}/T1_fov_denoised.nii"
+            fi
+
             fileOut="${T1reg}/${parc}_unwarped_dof12_dof6.nii.gz"
 
             cmd="flirt -in ${fileIn} \
@@ -537,7 +554,9 @@ if ${flags_T1_parc}; then
         parc="PARC$i"
         parc="${!parc}"
         pcort="PARC${i}pcort"
-        pcort="${!pcort}"        
+        pcort="${!pcort}"  
+        pnodal="PARC${i}pnodal"  
+        pnodal="${!pnodal}"       
 
         log "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
 
@@ -545,7 +564,8 @@ if ${flags_T1_parc}; then
         checkisfile ${fileIn}
 
         fileOut="${T1path}/T1_parc_${parc}_dil.nii.gz"
-         
+        
+        # Dilate the parcellation.
         cmd="fslmaths ${fileIn} -dilD ${fileOut}"
         log $cmd
         eval $cmd 
@@ -554,12 +574,14 @@ if ${flags_T1_parc}; then
         fileMul="${T1path}/T1_GM_mask.nii.gz"
         checkisfile ${fileMul}
 
+        # Apply subject GM mask
         fileOut2="${T1path}/T1_GM_parc_${parc}.nii.gz"
 
         cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
         log $cmd
         eval $cmd 
 
+        # Dilate and remask to fill GM mask a set number of times
         for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
             fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
 
@@ -583,7 +605,7 @@ if ${flags_T1_parc}; then
         if [ "${pcort}" -eq 1 ]; then
 
             log "CORTICAL-PARCELLATION removing subcortical and cerebellar gray matter"
-            #-------------------------------------------------------------------------#
+            # -------------------------------------------------------------------------#
             # Clean up the cortical parcellation by removing subcortical and
             # cerebellar gray matter.
 
@@ -712,27 +734,27 @@ if ${flags_T1_parc}; then
 
                 log "ADD_SUBCORT_PARC using ${FileIn}"
                 # call python script
-                add_subcort_parc ${FileIn}
+                add_subcort_parc ${FileIn} ${pnodal}
 
-            fi 
-
-            #-------------------------------------------------------------------------#
-            # 07.26.2017 EJC Dilate the final GM parcellations. 
-            # NOTE: They will be used by f_functiona_connectivity
-            #  to bring parcellations into epi space.
-
-            fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
-            cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
-            log $cmd
-            eval $cmd 
-            exitcode=$?
-            if [[ ${exitcode} -ne 0 ]]; then
-                echoerr "Dilation of ${parc} parcellation error! Exist status is ${exitcode}."
-            fi          
+            fi        
 
         fi 
 
 
+## !!!!!!!!!!!!!!!!! this section of code was originally inside the if-statement above. 
+        #-------------------------------------------------------------------------#
+        # 07.26.2017 EJC Dilate the final GM parcellations. 
+        # NOTE: They will be used by f_functiona_connectivity
+        #  to bring parcellations into epi space.
+
+        fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+        cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
+        log $cmd
+        eval $cmd 
+        exitcode=$?
+        if [[ ${exitcode} -ne 0 ]]; then
+            echoerr "Dilation of ${parc} parcellation error! Exist status is ${exitcode}."
+        fi   
 
     done
 

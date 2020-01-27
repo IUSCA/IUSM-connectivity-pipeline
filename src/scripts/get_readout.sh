@@ -33,7 +33,7 @@
 ###############################################################################
 
 function get_private_tags() {
-RedoutTime=$(python - "$1"<<END
+RedoutTime=$(${python3_7} - "$1"<<END
 import pydicom
 #import os
 import sys
@@ -76,8 +76,8 @@ END
 ###############################################################################
 
 ## Set paths and check for dicom direcotry
-path=$1
-dicomPath="${path}/DICOMS"
+local path=$1
+local dicomPath="${path}/DICOMS"
 #echo "get_readout -- path is -- ${dicomPath}"
 
 if [ "$(ls -A ${dicomPath})" ]; then

@@ -165,6 +165,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_RegOthers}; then
 
+                source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegOthers.sh"
                 echo $cmd
                 eval $cmd
@@ -174,6 +176,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_RegOthers. exiting."
                     exit 1
                 fi  
+
+                source deactivate
             fi 
 
 

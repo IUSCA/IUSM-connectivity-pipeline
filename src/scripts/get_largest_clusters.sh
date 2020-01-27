@@ -1,54 +1,75 @@
-#!/bin/bash
-#
-#
-#
-###############################################################################
-#
-# ---------------------------- GET_READOUT ---------------------------------
-# Obtain readout time from dicom data for distortion correction in FSL EDDY.
-#
-#                   Effective Echo Spacing (s) = 
-#        1 / (BandwidthPerPixelPhaseEncode (Hz) * MatrixSizePhase)
-#
-#   BandwidthPerPixelPhaseEncode -> Siemens dicom tag (0019, 1028)
-#   MatrixSizePhase -> size of image in phase encode direction; usually the
-# first number in the field (0051, 100b), AcquisitionMatrixText
 
-#               Total Readout Time (FSL definition)
-# Time from the center of the first echo to the center of the last
-# =(actual number of phase encoding lines - 1)* effective echo spacing
-#
-# Actual number of phase encoding lines = 
-#                       Image matrix in phase direction / GRAPPA factor
 
-# Original Matlab code - Evgeny Chumin, Indiana University School of Medicine, 2018
-#                        John West, Indiana University School of Medicine, 2018
-##
-###############################################################################
-
-# shopt -s nullglob # No-match globbing expands to null
-
-# source ${EXEDIR}/src/func/bash_funcs.sh
-
-###############################################################################
+############################################################################### 
 
 function largest_clusters() {
-RedoutTime=$(python - "$1"<<END
+path="$1" fIn="$2" fOut="$3" thr="$4"  python - <<END
+import os.path
+import numpy as np
+import nibabel as nib
+from skimage import measure 
+
+EPIpath=os.environ['path']
+# print(EPIpath)
+
+fIn=os.environ['fIn']
+# print("fIN: ", fIn)
+
+fOut=os.environ['fOut']
+# print("fOut: ", fOut)
+
+thr=int(os.environ['thr'])
+# print("thr: ", thr)
+
+
+fileIn=''.join([EPIpath,fIn])
+fileOut=''.join([EPIpath,fOut])
+
+v=nib.load(fileIn)  
+v_vol=v.get_fdata()
+# print(v_vol.shape)
+N = int(np.max(v_vol))
+# print("N = ",N)
+vol_clean = np.zeros(v_vol.shape)
+
+for i in range(1,N+1):
+    print(i)
+    vi = v_vol == i
+    vi = vi.astype(bool).astype(int)
+    # print("number of non-zero elements",np.count_nonzero(vi))
+    clusters = measure.label(vi,neighbors=8,return_num=True)
+    # print("number of clusters ",clusters[1])
+    for j in range(1,clusters[1]+1):
+        vj = np.count_nonzero(clusters[0] == j)
+        # print("label ",j, "num elements ",vj)
+        if vj > thr:
+            # print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+            vol_clean[clusters[0] == j] = i
+            # print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+
+
+
+v_vol_new = nib.Nifti1Image(v_vol.astype(np.float32),v.affine,v.header)
+nib.save(v_vol_new,fileOut) 
+
 
 END
-)
 }
 
+##############################################################################
+EPIpath=$1
+fileIn=$2
+fileOut=$3
+threshold=$4
 
-###############################################################################
+echo "EPIpath is -- ${EPIpath}"
+echo "FileIn is -- ${fileIn}"
+echo "fileOut is -- ${fileOut}"
+echo "threshold is -- ${threshold}"
 
-## Set paths and check for dicom direcotry
-local fIn=$1
-local fOut=$2
-local threshold=$3
 
 #echo "Calling Python script 
-largest_clusters ${fIn}
-echo "${RedoutTime}"
+echo "calling pyhon script"
+largest_clusters ${EPIpath} ${fileIn} ${fileOut} ${threshold}
 
 

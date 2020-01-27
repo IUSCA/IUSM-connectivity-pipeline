@@ -131,7 +131,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
     echo "p is ${p} -- ${parc} parcellation -- pcort is -- ${pcort} -- pnodal is -- ${pnodal}"
 
-    if [ ${pnodal} -eq 1 ]; then 
+    if [ ${pnodal} -eq 1 ]; then   # treat as a parcelattion that will serve as noded for connectivity
         
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
@@ -159,20 +159,20 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             ## UNFINISHED ##
             
         # removal of small clusters within ROIs
-        fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}_clean.nii.gz"   
+        fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
+        fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
-        # #cmd="${EXEDIR}/src/scripts/get_largerst_clusters.sh ${fileIn} ${fileIn} ${configs_EPI_minVoxelsClust}"                     
-        # cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
-        # log $cmd
-        # eval $cmd 
-##================================================================================================
+        cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+        #cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
+        log $cmd
+        eval $cmd 
+# ##================================================================================================
 
     elif [ ${pnodal} -eq 0 ]; then # treat as an organizational parcellation to group nodes
         # Added by MDZ; 10/06/2015
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
-        fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
+        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
 
         cmd="flirt -applyxfm -init ${fileInit} \
         -interp nearestneighbour \
@@ -205,13 +205,13 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             ## UNFINISHED ##
             
         # removal of small clusters within ROIs
-        fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}_clean.nii.gz"   
+        fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
+        fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
-        # #cmd="${EXEDIR}/src/scripts/get_largerst_clusters.sh ${fileIn} ${fileIn} ${configs_EPI_minVoxelsClust}"                     
-        # cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
-        # log $cmd
-        # eval $cmd 
+        cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+        #cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
+        log $cmd
+        eval $cmd 
 ##================================================================================================                                                               
     else
         log "WARNING the pnodal property is not specified for ${parc} parcellation.\

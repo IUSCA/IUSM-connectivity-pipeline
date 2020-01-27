@@ -281,48 +281,99 @@
 # corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
 # nib.save(corrDWI_new,fileOut)
 
+# import os.path
+# import numpy as np
+# import nibabel as nib
+
+
+# parcpath='/N/dc2/projects/connectivitypipeline/example_for_matt/matlab_outputs/T1/T1_GM_parc_yeo17_MNI152.nii'
+
+# head_tail = os.path.split(parcpath)
+
+# print(head_tail[0])
+# print(head_tail[1])
+
+# fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii'])
+# print(fileSubcort)
+
+# parc = nib.load(parcpath)
+# parc_vol = parc.get_data()
+# print(parc_vol.shape)
+# MaxID = np.max(parc_vol)
+# print(MaxID)
+
+# subcort = nib.load(fileSubcort)
+# subcort_vol = subcort.get_data()
+# ind = np.argwhere(subcort_vol == 16)
+# print(ind)
+
+# subcort_vol[subcort_vol == 16] = 0
+# ind = np.argwhere(subcort_vol == 16)
+# print(ind)
+
+# ids = np.unique(subcort_vol)
+# print(ids)
+
+# for s in range(0,len(ids)):
+#     print(ids[s]) 
+#     if ids[s] > 0:
+#         subcort_vol[subcort_vol == ids[s]] = MaxID + s
+
+
+# parc_vol[subcort_vol > 0] = 0
+# parc_vol = np.squeeze(parc_vol)+subcort_vol
+
+# fileOut = '/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/T1/T1_GM_parc_yeo17_MNI152_test.nii'
+# parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
+# nib.save(parc_vol_new,fileOut)
+
+#source activate /N/u/aiavenak/Carbonate/miniconda3/envs/scikit-env
+
 import os.path
 import numpy as np
 import nibabel as nib
+from skimage import measure 
 
 
-parcpath='/N/dc2/projects/connectivitypipeline/example_for_matt/matlab_outputs/T1/T1_GM_parc_yeo17_MNI152.nii'
+EPIpath='/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/EPI/'
 
-head_tail = os.path.split(parcpath)
-
-print(head_tail[0])
-print(head_tail[1])
-
-fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii'])
-print(fileSubcort)
-
-parc = nib.load(parcpath)
-parc_vol = parc.get_data()
-print(parc_vol.shape)
-MaxID = np.max(parc_vol)
-print(MaxID)
-
-subcort = nib.load(fileSubcort)
-subcort_vol = subcort.get_data()
-ind = np.argwhere(subcort_vol == 16)
-print(ind)
-
-subcort_vol[subcort_vol == 16] = 0
-ind = np.argwhere(subcort_vol == 16)
-print(ind)
-
-ids = np.unique(subcort_vol)
-print(ids)
-
-for s in range(0,len(ids)):
-    print(ids[s]) 
-    if ids[s] > 0:
-        subcort_vol[subcort_vol == ids[s]] = MaxID + s
+fileIn="rT1_GM_parc_yeo7.nii.gz"                        
+fileOut="rT1_GM_parc_yeo7_clean.nii.gz" 
+thr=0.2
 
 
-parc_vol[subcort_vol > 0] = 0
-parc_vol = np.squeeze(parc_vol)+subcort_vol
+fileIn=''.join([EPIpath,fileIn])
+v=nib.load(fileIn)  
+v_vol=v.get_fdata()
+print(v_vol.shape)
+N = int(np.max(v_vol))
+print("N = ",N)
+vol_clean = np.zeros(v_vol.shape)
+print("vol_clean shape ",vol_clean.shape)
 
-fileOut = '/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/T1/T1_GM_parc_yeo17_MNI152_test.nii'
-parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
-nib.save(parc_vol_new,fileOut)
+for i in range(1,2):
+    print(i)
+    vi = v_vol == i
+    vi = vi.astype(bool).astype(int)
+    #print(vi)
+    print("number of non-zero elements",np.count_nonzero(vi))
+    clusters = measure.label(vi,neighbors=8,return_num=True)
+    print("number of clusters ",clusters[1])
+    for j in range(1,clusters[1]+1):
+        vj = np.count_nonzero(clusters[0] == j)
+        print("label ",j, "num elements ",vj)
+        if vj > 8:
+            print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+            vol_clean[clusters[0] == j] = i
+            print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+
+
+
+fileOut=''.join([EPIpath,fileOut])
+
+v_vol_new = nib.Nifti1Image(v_vol.astype(np.float32),v.affine,v.header)
+nib.save(v_vol_new,fileOut)        
+
+
+
+#source deactivate
