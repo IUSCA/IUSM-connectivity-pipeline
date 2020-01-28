@@ -18,7 +18,7 @@ clearvars
 sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_template.m';
 %
 % Set to 1 the modalities you wish to create QA figures for:
-section.T1brainmask = 0;
+section.T1brainmask = 1;
 section.T1reg = 1;
 section.T1parc = 0;
 section.EPI = 0;
