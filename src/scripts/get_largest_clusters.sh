@@ -33,7 +33,7 @@ N = int(np.max(v_vol))
 vol_clean = np.zeros(v_vol.shape)
 
 for i in range(1,N+1):
-    print(i)
+    # print(i)
     vi = v_vol == i
     vi = vi.astype(bool).astype(int)
     # print("number of non-zero elements",np.count_nonzero(vi))
@@ -69,7 +69,7 @@ echo "threshold is -- ${threshold}"
 
 
 #echo "Calling Python script 
-echo "calling pyhon script"
+echo "calling pyhon script largest_clusters"
 largest_clusters ${EPIpath} ${fileIn} ${fileOut} ${threshold}
 
 

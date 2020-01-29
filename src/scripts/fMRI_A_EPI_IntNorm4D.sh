@@ -21,13 +21,14 @@ echo "# =========================================================="
 echo "# 4. Normalization to 4D mean 1000."
 echo "# =========================================================="
 
-if [[ ! -e "${EPIpath}/3_epi.nii.gz" ]]; then  
-    log "WARNING File ${EPIpath}/3_epi.nii.gz does not exist. Skipping further analysis"
+fileIn="${EPIpath}/3_epi.nii.gz"
+
+if [[ ! -e "${fileIn}" ]]; then  
+    log "WARNING File ${fileIn} does not exist. Skipping further analysis"
     exit 1 
 else
-    fileIn="${EPIpath}/3_epi.nii.gz"
+    
     fileOut="${EPIpath}/4_epi.nii.gz"
-
     cmd="fslmaths ${fileIn} -ing 1000 ${fileOut}"
     log $cmd
     eval $cmd 

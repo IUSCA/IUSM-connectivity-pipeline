@@ -199,14 +199,14 @@ if $fMRI_A; then
 		export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
 		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
 
-	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
+	export flags_EPI_SpinEchoUnwarp=false # Requires UNWARP directory and approporiate dicoms.
 	# # SPIN ECHO PAIRS (A-P, P-A) Acquistion on the Prisma
 		export configs_EPI_SEnumMaps=3; # Fallback Number of PAIRS of AP and PA field maps.
 	# # Defaults to reading *.dcm/ima files in SE AP/PA folders
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
 	# # readOutTime=echoSpacing*((matrixlines4phase*partialFourier/accelrerationFactor)-1)
 	# # readOutTime now calculated from image data.
-		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed.       
+		export flags_EPI_RunTopup=false # 1=Run topup (1st pass), 0=Do not rerun if previously completed.       
 	# # Gradient recalled echo Field Map Acquisition
 	# configs.EPI.GREmagdcm='GREFM_MAG_DICOMS'; # MAGNITUDE Series
 	# configs.EPI.GREphasedcm='GREFM_PHASE_DICOMS'; # PHASE Series
@@ -215,24 +215,23 @@ if $fMRI_A; then
 	# configs.EPI.GREdespike=1; # Perform FM despiking
 	# configs.EPI.GREsmooth=3; # GRE phase map smoothing (Gaussian sigma, mm)
 	# configs.EPI.EPIdwell=0.000308; # Dwell time (sec) for the EPI to be unwarped 
-	export flags_EPI_SliceTimingCorr=true
+	export flags_EPI_SliceTimingCorr=false
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=true
+	export flags_EPI_MotionCorr=false
 
-	export flags_EPI_RegT1=true;
+	export flags_EPI_RegT1=false;
 		export configs_EPI_epibetF=0.3000;
-		export configs_EPI_minVoxelsClust=8; # originally hardwired to 8
 
-	export flags_EPI_RegOthers=true;
-		export configs_EPI_GMprobthr=0.2; # Threshold the GM probability image
-										# change from 0.25 to 0.2 or 0.15
+	export flags_EPI_RegOthers=false;
+		export configs_EPI_GMprobthr=0.2; # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
+		export configs_EPI_minVoxelsClust=8; # originally hardwired to 8
 
 	export flags_EPI_IntNorm4D=false; # Intensity normalization to global 4D mean of 1000
 
-	export flags_EPI_AROMA=false; # ICA-based denoising; WARNING: This will smooth your data.
-		export ICA_AROMA="${PYpck}/ICA-AROMA"
+	export flags_EPI_AROMA=true; # ICA-based denoising; WARNING: This will smooth your data.
+		export ICA_AROMA_path="${PYpck}/ICA-AROMA"
 		if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
 			fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
 		else

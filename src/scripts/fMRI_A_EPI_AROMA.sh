@@ -16,6 +16,46 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
+function f_percent_variance() {
+fIn1="$1" fIn2="$2" ${python3_7} - <<END
+import os
+import numpy as np
+
+fIn1=os.environ['fIn1']
+#print("fIn1: ", fIn1)
+
+fIn2=os.environ['fIn2']
+#print("fIn2: ", fIn2)
+
+ICstats = np.loadtxt(fIn1)
+#print(ICstats)
+#print(ICstats.shape)
+
+motionICs = np.loadtxt(fIn2, delimiter=",",dtype=np.int32)
+#print(motionICs)
+
+
+peVar = np.zeros(len(motionICs))
+ptVar = np.zeros(len(motionICs))
+
+
+for i in range(0,len(motionICs)):
+    ind = motionICs[i]
+    peVar[i] = ICstats[ind-1,0]
+    ptVar[i] = ICstats[ind-1,1]
+
+peVar = np.sum(peVar)
+ptVar = np.sum(ptVar)
+
+print("%.2f percent of explained variance in removed motion components" % peVar)
+print("%.2f percent of total variance in removed motion components" % ptVar)
+
+
+END
+}
+
+##############################################################################
+
 
 echo "# =========================================================="
 echo "# 5. ICA-AROMA: Denoising. "
@@ -25,10 +65,6 @@ if [[ ! -e "${EPIpath}/4_epi.nii.gz" ]]; then
 
     log "WARNING File ${EPIpath}/4_epi.nii.gz does not exist. Skipping further analysis"
     exit 1 
-
-else
-
-    fileIn="${EPIpath}/4_epi.nii.gz"
 fi 
 
 AROMApath="${EPIpath}/AROMA"
@@ -89,7 +125,7 @@ if [[ ! -e "${fileWarpField}" ]]; then
     --in=${fileT1} \
     --ref=${fileMNI2mm} \
     --aff=${filedof12mat} \
-    --iout=${filedof12img} \
+    --iout=${fileWarpImg} \
     --cout=${fileWarpField}"
     log $cmd
     eval $cmd 
@@ -101,7 +137,7 @@ fi
 # 6mm FWHM EPI data smoothing
 echo "### Smoothing EPI data by 6mm FWHM"
 fileEPI="${EPIpath}/4_epi.nii.gz"
-fileSmooth="${EPIpath}/s6_4_epi.nii.gz" 
+fileSmooth="${AROMApath}/s6_4_epi.nii.gz" 
 
 if [[ ! -e "${fileSmooth}" ]]; then
 
@@ -121,7 +157,7 @@ echo "#### mcFLIRT realignment parameters"
 fileMovePar="${EPIpath}/motion.txt"
 if [[ ! -e "${fileMovePar}" ]]; then
     log "WARNING Movement parameters from mcFLIRT not found. \
-    Please set the flag flags_EPI_MotionCorr=true"
+    Please set the flag flags_EPI_MotionCorr=true. Exiting..."
     exit 1
 fi 
 
@@ -129,14 +165,14 @@ echo "## Starting ICA-AROMA"
 
 AROMAout="${AROMApath}/AROMA-output"
 
-if [[ -d "${AROMAout}" ]]; then
-    cmd="rm -rf ${AROMAout}"
-    log $cmd
-    eval $cmd     
-fi
+# if [[ -d "${AROMAout}" ]]; then
+#     cmd="rm -rf ${AROMAout}"
+#     log $cmd
+#     eval $cmd     
+# fi
 
 #cmd="${EXEDIR}/src/func/ICA-AROMA/ICA_AROMA.py \
-cmd="${ICA_AROMA}/ICA_AROMA.py \
+cmd="${ICA_AROMA_path}/ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \
@@ -144,8 +180,7 @@ cmd="${ICA_AROMA}/ICA_AROMA.py \
 -warp ${fileWarpField}"
 log $cmd 
 out=`$cmd`
-echo $out  
-log "ICA-AROMA: $out"
+log "$out"
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
@@ -160,3 +195,7 @@ else
 fi 
 
 
+# compute percent variance removed from the data
+ICstats="${AROMAout}/melodic.ica/melodic_ICstats"
+motionICs="${AROMAout}/classified_motion_ICs.txt"
+f_percent_variance ${ICstats} ${motionICs}
