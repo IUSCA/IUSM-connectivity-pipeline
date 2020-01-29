@@ -77,7 +77,7 @@ END
 
 ## Set paths and check for dicom direcotry
 path=$1
-local dicomPath="${path}/DICOMS"
+dicomPath="${path}/DICOMS"
 #echo "get_readout -- path is -- ${dicomPath}"
 
 if [ "$(ls -A ${dicomPath})" ]; then

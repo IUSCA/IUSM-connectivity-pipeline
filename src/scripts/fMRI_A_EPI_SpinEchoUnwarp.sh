@@ -66,7 +66,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fileOut="${path_EPI_SEFM}/sefield.nii.gz"
             if [ -e "${fileOut}" ]; then
                 cmd="rm -fr ${fileOut}"
-                log $cmd
+                log $cmdn
                 eval $cmd 
             fi 
 
@@ -107,6 +107,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
             acqparams="${path_EPI_SEFM}/acqparams.txt"
             if [[ -e ${acqparams} ]]; then
+                echo "removing ${acqparams}"
                 cmd="rm ${acqparams}"
                 log $cmd
                 eval $cmd

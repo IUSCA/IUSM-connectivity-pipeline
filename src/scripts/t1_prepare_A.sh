@@ -25,14 +25,18 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 
 		if ${flags_T1_dcm2niix}; then
 			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
+			dicomfiles=`find $T1path/${configs_dcmFolder} -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
+			if [[ $dicomfiles -eq 0 ]]; then 
+				log "WARNING No dicom (.IMA or .dcm) images found. Skipping further analysis"
+				exit 1				
+			fi
+
+
 			niifiles=`find $T1path -maxdepth 1 -name "*.nii*" | wc -l`
 			if [[ $niifiles != 0 ]]; then 
 				# Remove existing nifti images.
-				log "rm $T1path/*.${configs_niiFiles}"
-				rm $T1path/*.${configs_niiFiles}*
-			else
-				log "WARNING No dicom (.IMA or .dcm) images found. Skipping further analysis"
-				exit 1				
+				log "rm $T1path/.${configs_niiFiles}"
+				rm $T1path/*.${configs_niiFiles}*			
 			fi
 			
 			# Converting DICOM to Nifti
