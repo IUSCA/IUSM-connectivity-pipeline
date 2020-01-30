@@ -54,10 +54,10 @@ if flags.EPI.ReadHeaders==1
     jsonFile=fullfile(paths.EPI.dir, '0_epi.json');
     [dcm_ext]=find_dcm_ext(paths.EPI.dcm);
     dicom_files=dir(fullfile(paths.EPI.dcm,sprintf('*.%s',dcm_ext)));
-    if isempty(dcm_ext,'var') && ~exist(jsonFile,'file')
+    if isempty(dcm_ext) && ~exist(jsonFile,'file')
         warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
         return
-    elseif isempty(dcm_ext,'var') && exist(jsonFile,'file')
+    elseif isempty(dcm_ext) && exist(jsonFile,'file')
         warning('No dicom images found. Using existing JSON information')
         configs.EPI.json = 1;
     end
@@ -236,7 +236,7 @@ if flags.EPI.SpinEchoUnwarp==1
     else
         fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
         fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
-        if exist(paths.EPI.APdcm,'dir') && exist(paths.EPI.PAdcm,'dir')
+        if ~exist(fileInAP,'file') || ~exist(fileInPA,'file')
             fileNiiAP= 'AP';
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
             [~,result] = system(sentence); % remove any existing .nii images
@@ -253,7 +253,8 @@ if flags.EPI.SpinEchoUnwarp==1
             
             sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
             [~,result] = system(sentence); % gzip fieldmap volumes
-        elseif exist(fileInAP,'file') && exist(fileInPA,'file')
+        end
+        if exist(fileInAP,'file') && exist(fileInPA,'file')
             %Concatenate the AP then PA into single 4D image
             fileOut = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
             if exist(fileOut,'file')
@@ -264,7 +265,7 @@ if flags.EPI.SpinEchoUnwarp==1
             [~,result]=system(sentence);
             
             % Generate an acqparams text file based on number of field maps.
-            configs.EPI.SEreadOutTime = get_readout(paths,configs.name.dcmFiles);
+            configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext);
             fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
             APstr=[0 -1 0 configs.EPI.SEreadOutTime];
             PAstr=[0 1 0 configs.EPI.SEreadOutTime];
@@ -471,6 +472,8 @@ if flags.EPI.SliceTimingCorr==1
     disp('1. Slice Time Acquisition Correction')
     disp('------------------------------------')
     
+  if params.EPI.TR > configs.EPI.minTR
+        
     if exist(fullfile(paths.EPI.dir,'0_epi_unwarped.nii.gz'),'file')
         fileIn = fullfile(paths.EPI.dir,'0_epi_unwarped.nii.gz');
         disp(' -Processing: 0_epi_unwarped.nii.gz')
@@ -507,6 +510,10 @@ if flags.EPI.SliceTimingCorr==1
         sentence = sprintf(st_command,paths.FSL,fileIn,fileOut,params.EPI.TR);
     end
     [~,result] = system(sentence);
+  else
+      fprintf('Dataset TR is less than batch specified minTR\n')
+      fprintf('Skipping slice time correction.\n')
+  end
 end
 
 %% 2. Motion correction
@@ -537,10 +544,8 @@ if flags.EPI.MotionCorr==1
     end
     
     % Compute motion outliers
-    [fd_scrub,dvars_scrub]=find_motion_outliers(fileIn,paths,configs);
-    scrub =~sum(horzcat(fd_scrub,dvars_scrub),2);
-    save(fullfile(paths.EPI.dir,'scrubbing_goodvols.mat'),'scrub')
-      
+    find_motion_outliers(fileIn,paths);
+          
     fileOut = fullfile(paths.EPI.dir,'2_epi');
     sentence=sprintf('%s/fslval %s dim4',paths.FSL,fileIn);
     [~,result] = system(sentence);
@@ -610,7 +615,7 @@ if flags.EPI.RegT1==1
     fileOmat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
     fileWMseg = fullfile(paths.EPI.dir,'rT1_WM_mask');
     sentence = sprintf('%s/flirt -in %s -ref %s -out %s -omat %s -wmseg %s -cost bbr',...
-        paths.FSL,fileIn,fileRef,fieOut,fileOmat,fileWMseg);
+        paths.FSL,fileIn,fileRef,fileOut,fileOmat,fileWMseg);
     [~,result] = system(sentence);
     % Generate inverse matrix of bbr (T1_2_epi)
     fileMat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
@@ -760,6 +765,7 @@ if flags.EPI.IntNorm4D == 1
 end
 
 %% 5. Nuisance/Motion Parameter Regression
+if flags.EPI.NuisanceReg > 0 && flags.EPI.NuisanceReg < 3
 switch flags.EPI.NuisanceReg
     case 1
     disp('-----------------------')
@@ -884,9 +890,9 @@ switch flags.EPI.NuisanceReg
         if configs.EPI.numReg == 24
             motion_sq = motion.^2;
             motion_deriv_sq = motion_deriv.^2;
-        end  
-        save(fullfile(paths.EPI.HMP,'motion_sq_regressors.mat'),'motion_sq','motion_deriv_sq')
-        disp('saved quadratics of motion and its derivatives')
+            save(fullfile(paths.EPI.HMP,'motion_sq_regressors.mat'),'motion_sq','motion_deriv_sq')
+            disp('saved quadratics of motion and its derivatives')
+        end
     else
         disp('4_epi.nii.gz does not exist. Exiting...')
         return
@@ -894,6 +900,7 @@ switch flags.EPI.NuisanceReg
     otherwise
         disp('Invalid parameter selection for flags.EPI.NuisanceReg')
 end
+
 %% Physiological Regressors
 if flags.EPI.PhysReg > 0 && flags.EPI.PhysReg < 3
 switch flags.EPI.PhysReg
@@ -990,6 +997,8 @@ end
                 'CSFderiv_sq','WMavg','WMavg_sq','WMderiv','WMderiv_sq');
             disp('saved mean CSF WM signal, derivatives, and quadtatics')
     end
+end
+%% Global Signal Regression
     if flags.EPI.GS == 1
         disp('------------------------')
         disp('Global Signal Regression')
@@ -1069,7 +1078,7 @@ end
         RegressMatrix = cell.empty;
         zRegressMatrix = cell.empty;
         disp('  -- aCompCor PC of WM & CSF regressors')
-        if isempty(configs.EPI.numPC,'var')
+        if isempty(configs.EPI.numPC)
             disp('    -- Applying all levels of PCA removal')
             for ic = 0:5
                 if ic == 0 
@@ -1093,10 +1102,6 @@ end
             nR = 'aroma';
         case 2
             nR = sprintf('hmp%d',configs.EPI.numReg);
-            if configs.EPI.scrub == 1
-                load(paths.EPI.dir,'scrubbing_goodvols.mat')
-                nR = sprintf('scrubbed_%s',nR);
-            end
     end
     switch flags.EPI.GS
         case 1
@@ -1104,7 +1109,7 @@ end
     end
     switch flags.EPI.PhysReg
         case 1
-            if isempty(configs.EPI.numPC,'var')
+            if isempty(configs.EPI.numPC)
                 nR = [nR '_pca'];
             elseif configs.EPI.numPC > 0 && configs.EPI.numPC < 6
                 nR = [nR '_pca' num2str(configs.EPI.numPC)];
@@ -1116,19 +1121,14 @@ end
     resting.vol(~GSmask)=0;
 
         for rg=1:length(zRegressMatrix)
-            if flags.EPI.NuisanceReg == 2 && configs.EPI.scrub == 1
-                resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1},scrub);
-            else
-               resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1}); 
-            end
+            resid{rg,1} = apply_regressors(resting.vol,volBrain.vol,zRegressMatrix{rg,1}); 
         end
+        
+        resting.vol=[];
         % save data (for header info), regressors, and residuals
         save(fullfile(paths.EPI.PhRegDir,sprintf('NuisanceRegression_%s_output.mat',nR)),...
             'resting','volBrain','GSmask','RegressMatrix','zRegressMatrix','resid','nR','-v7.3')
         fprintf('saved regression output with %s\n',nR) 
-else
-    disp('Invalid parameter selection for flags.EPI.PhysReg')
-end
 
 %% 6. DEMEAN AND DETREND
 if flags.EPI.DemeanDetrend == 1
@@ -1146,8 +1146,8 @@ if flags.EPI.DemeanDetrend == 1
     
     % read data
     load(fileIn)
-    [sizeX,sizeY,sizeZ,numTimePoints] = size(resting.vol);
-  for pc=1:length(resid)    
+  for pc=1:length(resid)
+    [sizeX,sizeY,sizeZ,numTimePoints] = size(resid{pc,1});
     for i=1:sizeX
         for j=1:sizeY
             for k=1:sizeZ
@@ -1167,7 +1167,6 @@ if flags.EPI.DemeanDetrend == 1
   end
   save(fullfile(paths.EPI.PhRegDir,sprintf('NuisanceRegression_%s_output_dmdt.mat',nR)),...
         'resting','volBrain','GSmask','RegressMatrix','zRegressMatrix','resid','nR','-v7.3')  
-
 end
 
 %% 8. BANDPASS
@@ -1183,9 +1182,11 @@ if flags.EPI.BandPass==1
     f1 = (configs.EPI.fMin*2)*params.EPI.TR;
     f2 = (configs.EPI.fMax*2)*params.EPI.TR;
         for pc=1:length(resid)
+            [~,~,~,numTimePoints] = size(resid{pc,1});
             GSts_resid = reshape(resid{pc,1}(GSmask),[nnz(volBrain.vol),numTimePoints]);
             [tsf] = apply_butterworth_filter(GSts_resid',order,f1,f2);
             clear GSts_resid;
+            resting.vol=resid{pc,1};
             resting.vol(GSmask) = tsf';
             if length(resid)==1
                 fileOut = fullfile(paths.EPI.PhRegDir,sprintf('7_epi_%s.nii.gz',nR));
@@ -1201,6 +1202,30 @@ if flags.EPI.BandPass==1
     end
 end
 
+%% Scrubbing
+if flags.EPI.scrubbing == 1
+    disp('-----------------')
+    disp('Scrubbing Volumes')
+    disp('-----------------')    
+    
+    scrub = scrub_motion_outliers(paths,configs);
+    
+    fileList = dir(fullfile(paths.EPI.PhRegDir,sprintf('7_epi_%s*.nii.gz',nR)));
+    for fl=1:length(fileList)
+        if ~isempty(strfind(fileList(fl).name,'scrubbed'))
+        else
+        mtype = extractBetween(fileList(fl).name,'epi_','.nii.gz');
+    
+        resting = MRIread(fullfile(fileList(fl).folder,fileList(fl).name));
+        resting.vol=resting.vol(:,:,:,scrub);
+          
+        fileOut = fullfile(paths.EPI.PhRegDir,sprintf('7_epi_%s_scrubbed.nii.gz',mtype{1}));
+        MRIwrite(resting,fileOut,'double');
+        clear resting
+        end
+    end
+end
+
 %% 10. ROIs
 if flags.EPI.ROIs==1
     disp('-------')
@@ -1211,7 +1236,7 @@ if flags.EPI.ROIs==1
     volCSF = MRIread(fullfile(paths.EPI.dir,'rT1_CSF_mask_eroded.nii.gz')); volCSF = volCSF.vol;
     volBrain = MRIread(fullfile(paths.EPI.dir,'rT1_brain_mask_FC.nii.gz')); volBrain = volBrain.vol;
     
-    fileList = dir(fullfile(paths.EPI.PhRegDir,'7_epi*.nii.gz'));
+    fileList = dir(fullfile(paths.EPI.PhRegDir,sprintf('7_epi_%s*.nii.gz',nR)));
     for fl=1:length(fileList)
         mtype = extractBetween(fileList(fl).name,'epi_','.nii.gz');
         paths.EPI.Mats = fullfile(paths.EPI.PhRegDir,sprintf('TimeSeries_%s',mtype{1}));
@@ -1252,4 +1277,6 @@ if flags.EPI.ROIs==1
             end
         end      
     end
+end
+end
 end

@@ -18,7 +18,7 @@ clearvars
 sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_template.m';
 %
 % Set to 1 the modalities you wish to create QA figures for:
-section.T1brainmask = 0;
+section.T1brainmask = 1;
 section.T1reg = 1;
 section.T1parc = 0;
 section.EPI = 0;
@@ -91,7 +91,7 @@ for k=1:length(subjectList)
     disp(subjectList(k).name)
     paths.subject=fullfile(paths.data,subjectList(k).name); % path to subject
     Subj_T1=fullfile(paths.subject,configs.name.T1);
-    paths.QAdir=fullfile(paths.subject,'QA_figures'); %output directory
+    paths.QAdir=fullfile(paths.subject,'QC_figures'); %output directory
     if ~exist(paths.QAdir,'dir')
         mkdir(paths.QAdir) % make output directory if it doesn't exist
     end
@@ -204,7 +204,7 @@ if section.EPI ==1
 for k=1:length(subjectList)
     disp(subjectList(k).name)
     paths.subject=fullfile(paths.data,subjectList(k).name); % path to subject
-    paths.QAdir=fullfile(paths.subject,'QA_figures'); %output directory
+    paths.QAdir=fullfile(paths.subject,'QC_figures'); %output directory
     if ~exist(paths.QAdir,'dir')
         mkdir(paths.QAdir) % make output directory if it doesn't exist
     end
