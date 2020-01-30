@@ -309,6 +309,7 @@ if flags.T1.parc==1
             MRIwrite(volParc,FileIn)
         end
 %-------------------------------------------------------------------------%
+    end
         % 07.26.2017 EJC Dilate the final GM parcellations. 
         % NOTE: These will be used by f_functional_connectivity to bring parcellations into epi space.
         fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
@@ -318,6 +319,5 @@ if flags.T1.parc==1
             warning('Dilation of %s parcellation error! See return below for details.',parcs.plabel(k).name);
             disp(result)
         end
-    end
     end
 end 

@@ -5,6 +5,7 @@
 %
 % Contributors:
 %        Evgeny Chumin, Indiana University School of Medicine, 2018
+%                       Indiana University Bloomington, 2020                    
 %        John West, Indiana University School of Medicine, 2018
 %%
             %------------------------------------------------%
@@ -12,14 +13,8 @@
             %------------------------------------------------%
 
     % Add path to connectome scripts directory
-paths.scripts = '/home/echumin/Documents/PROJECTS/image_processing/IUSM-connectivity-pipeline/connectome_scripts';
-addpath(paths.scripts);
-    % path to use MRIread MRIwrite
-addpath(fullfile(paths.scripts,'toolbox_matlab_nifti'));
-    % path to templates in MNI
-paths.MNIparcs =fullfile(paths.scripts,'templates/MNIparcs');
-    % path to T1 denoiser
-addpath(genpath(fullfile(paths.scripts,'MRIDenoisingPackage')));
+paths.scripts = '/path/to/where/you/put/IUSM-connectivity-pipeline';
+addpath(genpath(paths.scripts));
 
 %%  (This may/should already be set in your .bashrc)
     % path to FSL bin directory
@@ -32,23 +27,28 @@ clear fpath
 [~,apath]=system('which afni');
 paths.AFNI = apath(1:end-6);
 clear apath
-    % Path to MRIcroGL
-paths.MRIcroGL = '/N/soft/rhel6/mricrogl/20170808/mricrogl_lx';
     % ants brain extraction path
 [~,antspath]=system('which ants.sh');
 paths.ANTS = extractBefore(antspath,'/ants.sh');
 clear antspath
+    % Path to MRtrix
+[~,mrtrix]=system('which dwi2response');
+paths.MRtrix = extractBefore(mrtrix,'/dwi2response');
     % path to python (for ICA-AROMA EPI clean-up)
-    % currently using python2.7 in the miniconda environment
+    % 
     % consult readme and manual in the ICA-AROMA directory in
     % connectome_scripts for instalation instructions.
-paths.python = '~/anaconda3/bin/python3.7';
+[~,paths.python]=system('which python');
+    % if you want to use a different python distribution (other than that
+    % on your system, commento ut line 40, and uncomment and set path in
+    % line 43.
+% paths.python = '/path/to/your/python';
 %%
                     %------------------------------%
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/home/echumin/Documents/PROJECTS/image_processing/datadir/';
+paths.data = '/path/to/your/data/directory/';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 
@@ -75,7 +75,8 @@ subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and 
     % subjects copy and paste the second line as necessary.
     
 %clear subjectList %remove the above generated list
-%subjectList(1).name = '10004_6'; % copy this line for additional subjects
+%subjectList(1).name = 'SUBJECT1'; 
+%subjectList(end+1).name = 'SUBEJCT2'; % copy this line for additional subjects
 
                     end
 
@@ -112,7 +113,5 @@ configs.name.DWI = 'DWI';
         configs.name.dcmPA = 'B0_PA_DCM'; %b0 opposite phase encoding
 
 configs.name.dcmFolder = 'DICOMS';
-configs.name.dcmFiles = 'IMA'; % Dicom file extension
-configs.name.niiFiles = 'nii'; % Nifti-1 file extension
 
 %%
