@@ -17,29 +17,42 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function f_load_motion_reg() {
-path="$1" python - <<END
+path="$1" numReg="$2" ${python3_7} - <<END
 import os
 import numpy as np
 
 EPIpath=os.environ['path']
 
+numReg=int(os.environ['numReg'])
+
 # load motion regressors
 fname=''.join([EPIpath,'/motion.txt'])
 motion = np.loadtxt(fname)
 [rows,columns] = motion.shape
-print([rows,columns])
 
 # derivatives of 6 motion regressors
-motion_derivative = np.zeros((rows,columns))
-print("motion_derivative ", motion_derivative.shape)
+motion_deriv = np.zeros((rows,columns))
 
 for i in range(columns):
     m = motion[:,i]
     m_deriv = np.diff(m)
-    motion_derivative[1:,i] = m_deriv
+    motion_deriv[1:,i] = m_deriv
 
-fname=''.join([EPIpath,'/motion_deriv.txt'])
-np.savetxt(fname, motion_derivative)
+fname=''.join([EPIpath,'/HMPreg/motion_deriv.txt'])
+np.savetxt(fname, motion_deriv,fmt='%2.7f')
+fname=''.join([EPIpath,'/HMPreg/motion.txt'])
+np.savetxt(fname, motion,fmt='%2.7f')
+
+if numReg == 24:
+    motion_sq = np.power(motion,2)
+    motion_deriv_sq = np.power(motion_deriv,2)
+
+
+fname=''.join([EPIpath,'/HMPreg/motion_sq.txt'])
+np.savetxt(fname, motion_sq,fmt='%2.7f')
+fname=''.join([EPIpath,'/HMPreg/motion_deriv_sq.txt'])
+np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
+
 
 END
 }
@@ -49,14 +62,16 @@ END
 ## 7. MOTION AND OUTLIER REGRESSORS
 
 
-fileIn=${EPIpath}/0_epi.nii.gz
+#fileIn=${EPIpath}/4_epi.nii.gz
 
-if [[ ! -e "${fileIn}" ]]; then  
+if [[ ! -e "${EPIpath}/0_epi.nii.gz" ]]; then  
 
-    log "WARNING -  $fileIn does not exist. Skipping further analysis..."
+    log "WARNING -  ${EPIpath}/4_epi.nii.gz does not exist. Skipping further analysis..."
     exit 1        
 
 else
+
+
     log "## Working on 0_epi.nii.gz"
     cmd="fslval ${fileIn} pixdim4"
     log $cmd
@@ -84,33 +99,33 @@ else
 
 fi 
 
-if [[ ${flags_EPI_GS} -eq 1 ]]; then
+# if [[ ${flags_EPI_GS} -eq 1 ]]; then
     
-    epiGS_path="${EPIpath}/GSreg_yes"
-    GSreg_name="GSreg\_yes"  
+#     epiGS_path="${EPIpath}/GSreg_yes"
+#     GSreg_name="GSreg\_yes"  
 
-elif [[ ${flags_EPI_GS} -eq 0 ]]; then
+# elif [[ ${flags_EPI_GS} -eq 0 ]]; then
 
-    epiGS_path="${EPIpath}/GSreg_no"
-    GSreg_name="GSreg\_no"
+#     epiGS_path="${EPIpath}/GSreg_no"
+#     GSreg_name="GSreg\_no"
 
-else
+# else
 
-    log "WARNING flags_EPI_GS not specified. Exiting..."
-    exit 1
+#     log "WARNING flags_EPI_GS not specified. Exiting..."
+#     exit 1
 
-fi 
+# fi 
 
-if [[ ! -d ${epiGS_path} ]]; then 
-    cmd="mkdir ${epiGS_path}"
-    log $cmd
-    eval $cmd 
-fi   
+# if [[ ! -d ${epiGS_path} ]]; then 
+#     cmd="mkdir ${epiGS_path}"
+#     log $cmd
+#     eval $cmd 
+# fi   
 
 
-echo "# =========================================================="
-echo "# 7. Motion and Outlier Regressors. "
-echo "# =========================================================="
+# echo "# =========================================================="
+# echo "# 7. Motion and Outlier Regressors. "
+# echo "# =========================================================="
 
 # file2read="${EPIpath}/6_epi.nii.gz"
 

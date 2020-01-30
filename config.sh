@@ -111,7 +111,7 @@ export PARC3pnodal=0;
 # parcs.pcort(2).true=1;
 # parcs.pnodal(2).true=1;
 
-export numParcs=2  # CSF doesn't count; numParcs cannot be less than 1. Shen is the defailt parc
+export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Shen is the defailt parc
 
 
 ################################################################################
@@ -204,12 +204,8 @@ if $fMRI_A; then
 		export configs_EPI_SEnumMaps=3; # Fallback Number of PAIRS of AP and PA field maps.
 	# # Defaults to reading *.dcm/ima files in SE AP/PA folders
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
-	# # readOutTime=echoSpacing*((matrixlines4phase*partialFourier/accelrerationFactor)-1)
-	# # readOutTime now calculated from image data.
-		export flags_EPI_RunTopup=false # 1=Run topup (1st pass), 0=Do not rerun if previously completed.       
+		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed.       
 	# # Gradient recalled echo Field Map Acquisition
-	# configs.EPI.GREmagdcm='GREFM_MAG_DICOMS'; # MAGNITUDE Series
-	# configs.EPI.GREphasedcm='GREFM_PHASE_DICOMS'; # PHASE Series
 	# configs.EPI.GREbetf=0.5; # GRE-specific bet values. Do not change
 	# configs.EPI.GREbetg=0;   # GRE-specific bet input. Change if needed 
 	# configs.EPI.GREdespike=1; # Perform FM despiking
@@ -230,12 +226,42 @@ if $fMRI_A; then
 
 	export flags_EPI_IntNorm4D=false; # Intensity normalization to global 4D mean of 1000
 
-	export flags_EPI_AROMA=true; # ICA-based denoising; WARNING: This will smooth your data.
-		export ICA_AROMA_path="${PYpck}/ICA-AROMA"
-		if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
-			fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
+########## MOTION AND OUTLIER CORRECTION ###############
+	export flags_EPI_NuisanceReg=false
+	## Nuisance Regressors. There are two options that user can select from:
+	# 1) ICA-based denoising; WARNING: This will smooth your data.
+	# 2) Head Motion Parameter Regression.  
+	## If user sets flags_NuisanceReg_AROMA=true, then flags_NuisanceReg_HeadParam=false
+	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
+
+		export flags_NuisanceReg_AROMA=true;  
+			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
+				export flags_NuisanceReg_HeadParam=false
+				export ICA_AROMA_path="${PYpck}/ICA-AROMA"
+				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
+					fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
+				else
+					fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
+				fi
+			else                         # if using Head Motion Parameters
+				export flags_NuisanceReg_HeadParam=true
+					export configs_EPI_numReg=24  # 12 (orig and deriv) or 24 (+sq of 12)
+					export configs_EPI_scrub=1    # perform scrubbing based on FD and DVARS criteria
+			fi
+
+########## PHYSIOLOGICAL REGRESSORS ###############
+	export flags_EPI_PhysiolReg=true;  
+	# Two options that the user can select from:
+	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
+	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
+		export flags_PhysiolReg_aCompCorr=true  
+		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
+			export flags_PhysiolReg_WM_CSF=false
+			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
+										  # leave empty to include all
 		else
-			fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
+			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
+				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
 		fi
 
 

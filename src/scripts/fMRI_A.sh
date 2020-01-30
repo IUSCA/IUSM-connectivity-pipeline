@@ -194,24 +194,52 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi            
 
+            if ${flags_EPI_NuisanceReg}; then
+                log "-------- NuisanceReg ----------"
 
-            if ${flags_EPI_AROMA}; then
+                if ${flags_NuisanceReg_AROMA}; then
 
-                source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
-                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
+                    source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                    cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
+                    echo $cmd
+                    eval $cmd
+                    exitcode=$?
+
+                    if [[ ${exitcode} -ne 0 ]] ; then
+                        echoerr "problem at fMRI_A_EPI_AROMA. exiting."
+                        exit 1
+                    fi                
+                    source deactivate
+                   
+                elif ${flags_NuisanceReg_HeadParam}; then
+
+                    cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_HeadMotionParam.sh"
+                    echo $cmd
+                    eval $cmd
+                    exitcode=$?
+
+                    if [[ ${exitcode} -ne 0 ]] ; then
+                        echoerr "Problem at fMRI_A_EPI_HeadMotionParam. Exiting."
+                        exit 1
+                    fi  
+                fi 
+            else
+                log "WARNING Skipping NuisanceReg. Please set flags_EPI_NuisanceReg=true to run Nuisance Regression"
+            fi
+
+            if ${flags_EPI_PhysiolReg}; then
+
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_PhysiolReg.sh"
                 echo $cmd
                 eval $cmd
                 exitcode=$?
 
                 if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at fMRI_A_EPI_AROMA. exiting."
+                    echoerr "problem at fMRI_A_EPI_PhysiolReg. exiting."
                     exit 1
-                fi                
-                source deactivate
-                #singularity pull --name ants.simg docker://brainlife/ants 
-                #singularity shell ants.simg 
-                #DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i $T1path/T1.nii.gz -o $T1path/T1_denoised_ANTS.nii
-            fi 
+                fi  
+            fi   
+
 
             if ${flags_EPI_DemeanDetrend}; then
 
@@ -226,18 +254,18 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi             
 
-            if ${flags_EPI_MotionRegressors}; then
+            # if ${flags_EPI_MotionRegressors}; then
 
-                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_MotionRegressors.sh"
-                echo $cmd
-                eval $cmd
-                exitcode=$?
+            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_MotionRegressors.sh"
+            #     echo $cmd
+            #     eval $cmd
+            #     exitcode=$?
 
-                if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at fMRI_A_EPI_MotionRegressors. exiting."
-                    exit 1
-                fi  
-            fi             
+            #     if [[ ${exitcode} -ne 0 ]] ; then
+            #         echoerr "problem at fMRI_A_EPI_MotionRegressors. exiting."
+            #         exit 1
+            #     fi  
+            # fi             
 
 
 
