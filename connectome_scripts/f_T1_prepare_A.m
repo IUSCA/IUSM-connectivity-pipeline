@@ -137,12 +137,12 @@ if flags.T1.bet==1
     fileOutroot = fullfile(paths.T1.dir,'T1_');
     switch configs.T1.antsTemplate
         case 'MICCAI'
-            fileTemplate = fullfile(paths.scripts,'templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0.nii.gz');
-            fileProbability = fullfile(paths.scripts,'templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0_BrainCerebellumProbabilityMask.nii.gz');
+            fileTemplate = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0.nii.gz');
+            fileProbability = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0_BrainCerebellumProbabilityMask.nii.gz');
             fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
         case 'NKI'
-            fileTemplate = fullfile(paths.scripts,'templates/brainmask_templates/NKI/T_template.nii.gz');
-            fileProbability = fullfile(paths.scripts,'templates/brainmask_templates/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz');
+            fileTemplate = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/NKI/T_template.nii.gz');
+            fileProbability = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz');
             fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
         case 'bet'
             fprintf('Using bet -f and -g inputs to perform fsl bet with -B option\n')

@@ -794,7 +794,7 @@ switch flags.EPI.NuisanceReg
         % T1 -> MNI152_2mm nonlinear transformation
         disp('   - T1 to MNI 2mm nonlinear transform')
         fileT1 = fullfile(paths.T1.dir,'T1_brain.nii');
-        fileMNI2mm = fullfile(paths.scripts,'templates/MNIparcs/MNI_templates/MNI152_T1_2mm_brain.nii.gz');
+        fileMNI2mm = fullfile(paths.scripts,'connectome_scripts/templates/MNIparcs/MNI_templates/MNI152_T1_2mm_brain.nii.gz');
         filedof12mat = fullfile(paths.EPI.AROMAreg,'T1_2_MNI2mm_dof12.mat');
         filedof12img = fullfile(paths.EPI.AROMAreg,'rT1_dof12_2mm.nii.gz');
         if ~exist(filedof12mat,'file')
@@ -833,7 +833,7 @@ switch flags.EPI.NuisanceReg
         end
         disp(' - Starting ICA-AROMA')
         paths.EPI.AROMAout = fullfile(paths.EPI.AROMA,'AROMA-output');
-        sentence = sprintf('%s %s/ICA-AROMA/ICA_AROMA.py -in %s -out %s -mc %s -affmat %s -warp %s',...
+        sentence = sprintf('%s %s/connectome_scripts/ICA-AROMA/ICA_AROMA.py -in %s -out %s -mc %s -affmat %s -warp %s',...
             paths.python,paths.scripts,fileSmooth,paths.EPI.AROMAout,fileMovePar,fileMat,fileWarpField);
         [~,result]=system(sentence);
         disp(result)
