@@ -794,7 +794,7 @@ switch flags.EPI.NuisanceReg
         % T1 -> MNI152_2mm nonlinear transformation
         disp('   - T1 to MNI 2mm nonlinear transform')
         fileT1 = fullfile(paths.T1.dir,'T1_brain.nii');
-        fileMNI2mm = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_2mm_brain.nii.gz');
+        fileMNI2mm = fullfile(paths.scripts,'templates/MNIparcs/MNI_templates/MNI152_T1_2mm_brain.nii.gz');
         filedof12mat = fullfile(paths.EPI.AROMAreg,'T1_2_MNI2mm_dof12.mat');
         filedof12img = fullfile(paths.EPI.AROMAreg,'rT1_dof12_2mm.nii.gz');
         if ~exist(filedof12mat,'file')

@@ -13,7 +13,7 @@ function [paths,configs,parcs]=fsl_registration_parcellations_non_linear(paths,c
 %%
 % Set registration directory path and remove any existing reg directories.
 paths.T1.reg = fullfile(paths.T1.dir,'registration');
-
+paths.MNIparcs = fullfile(paths.scripts,'templates/MNIparcs');
 % Check if existng transformation matrices should be used.
 if configs.T1.useExistingMats == 1
     % check if transformations are there
