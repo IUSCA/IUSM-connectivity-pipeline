@@ -26,7 +26,7 @@ if flags.EPI.dcm2niix == 1
     end
     % import dicoms
     fileLog= sprintf('%s/dcm2niix.log',paths.EPI.dir);
-    sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,epifile,paths.EPI.dir,paths.EPI.dcm,fileLog);
+    sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,epifile,paths.EPI.dir,paths.EPI.dcm,fileLog);
     [~,result] = system(sentence);
     sentence=sprintf('gzip -f %s/0_epi.nii',paths.EPI.dir);
     [~,result] = system(sentence);
@@ -241,14 +241,14 @@ if flags.EPI.SpinEchoUnwarp==1
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
             [~,result] = system(sentence); % remove any existing .nii images
             fileLog= sprintf('%s/dcm2niix_AP.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
+            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
             [~,result] = system(sentence); % import AP fieldmaps
 
             fileNiiPA= 'PA';
             sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiPA);
             [~,result] = system(sentence); % remove any existing .nii images
             fileLog= sprintf('%s/dcm2niix_PA.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
+            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
             [~,result] = system(sentence); % import PA fieldmaps
             
             sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
@@ -361,7 +361,7 @@ if flags.EPI.SpinEchoUnwarp==1
             if exist(fileMag2,'file'); delete(fileMag2); end 
             % dicom import
             fileLog= sprintf('%s/dcm2niix.log',paths.EPI.GREmagdcm);
-            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.EPI.SEFM,paths.EPI.GREmagdcm,fileLog);
+            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.EPI.SEFM,paths.EPI.GREmagdcm,fileLog);
             [~,result] = system(sentence);
             
             fileNm1 = '_e2'; % dcm2niix automatically prepends for 2nd echo images
@@ -372,7 +372,7 @@ if flags.EPI.SpinEchoUnwarp==1
             if exist(filePhaseMap1,'file'); delete(filePhaseMap1); end
             % dicom import
             fileLog=sprintf('%s/dcm2niix.log',paths.EPI.GREphasedcm);
-            sentence=sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',...
+            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',...
                 paths.scripts,fileNm2,paths.EPI.SEFM,paths.EPI.GREphasedcm,fileLog);
             [~,result] = system(sentence);
             % Copy and gzip the nifti images

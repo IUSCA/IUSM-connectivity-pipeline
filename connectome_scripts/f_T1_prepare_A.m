@@ -32,7 +32,7 @@ if flags.T1.dcm2niix==1
     % Convert dicom to nifti.
     disp('Converting Dicom-to-nifti')
     fileLog = sprintf('%s/dcm2niix.log',paths.T1.dir);
-    sentence = sprintf('%s/dcm2niix/dcm2niix -f %s -o %s -v y -x y -b y %s > %s',paths.scripts,configs.name.T1,paths.T1.dir,paths.T1.dcm,fileLog);
+    sentence = sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y -b y %s > %s',paths.scripts,configs.name.T1,paths.T1.dir,paths.T1.dcm,fileLog);
     [status,result] = system(sentence);
     if status == 0
         sentence = sprintf('mv %s/%s.nii %s/%s_orig.nii',paths.T1.dir,configs.name.T1,paths.T1.dir,configs.name.T1);
