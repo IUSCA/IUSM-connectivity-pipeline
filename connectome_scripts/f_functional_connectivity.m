@@ -232,7 +232,7 @@ if flags.EPI.SpinEchoUnwarp==1
     
     if ~exist(paths.EPI.SEFM,'dir') 
         warning('%s',paths.EPI.SEFM,' does not exist. Field map correction must be skipped.')
-        return
+        
     else
         fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
         fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
@@ -611,11 +611,10 @@ if flags.EPI.RegT1==1
     % bbr registration of fMRI to rT1_dof6 based on WMseg
     fileRef = fullfile(paths.EPI.dir,'rT1_brain_dof6.nii.gz');
     fileIn = fullfile(paths.EPI.dir,'2_epi_meanvol.nii.gz');
-    fileOut = fullfile(paths.EPI.dir,'rT1_brain_dof6bbr.nii.gz');
     fileOmat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
     fileWMseg = fullfile(paths.EPI.dir,'rT1_WM_mask');
-    sentence = sprintf('%s/flirt -in %s -ref %s -out %s -omat %s -wmseg %s -cost bbr',...
-        paths.FSL,fileIn,fileRef,fileOut,fileOmat,fileWMseg);
+    sentence = sprintf('%s/flirt -in %s -ref %s -omat %s -wmseg %s -cost bbr',...
+        paths.FSL,fileIn,fileRef,fileOmat,fileWMseg);
     [~,result] = system(sentence);
     % Generate inverse matrix of bbr (T1_2_epi)
     fileMat = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
@@ -630,13 +629,6 @@ if flags.EPI.RegT1==1
     sentence = sprintf('%s/convert_xfm -omat %s -concat %s %s',...
         paths.FSL,fileMatJoint,fileMat2,fileMat1);
     [~,result] = system(sentence);
-    % Join the epi_2_T1 dof and bbr matrices
-    fileMat1 = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
-    fileMat2 = fullfile(paths.EPI.dir,'epi_2_T1_dof6.mat');
-    fileMatJoint = fullfile(paths.EPI.dir,'epi_2_T1_bbr_dof6.mat');
-    sentence = sprintf('%s/convert_xfm -omat %s -concat %s %s',...
-        paths.FSL,fileMatJoint,fileMat2,fileMat1);
-    [~,result] = system(sentence);
 %-------------------------------------------------------------------------%
 end
 
@@ -647,6 +639,14 @@ if flags.EPI.RegOthers==1
         return
       end
 %-------------------------------------------------------------------------%    
+    % brain
+    fileIn = fullfile(paths.T1.dir,'T1_brain.nii.gz');
+    fileRef = fullfile(paths.EPI.dir,'2_epi_meanvol_mask.nii.gz');
+    fileOut = fullfile(paths.EPI.dir,'rT1_brain_dof6bbr.nii.gz');
+    fileInit = fullfile(paths.EPI.dir,'T1_2_epi_dof6_bbr.mat');
+    sentence = sprintf('%s/flirt -in %s -ref %s -out %s -applyxfm -init %s -interp spline -nosearch',...
+    paths.FSL,fileIn,fileRef,fileOut,fileInit);
+    [~,result] = system(sentence);
     % brain mask
     fileIn = fullfile(paths.T1.dir,'T1_brain_mask_filled.nii.gz');
     fileRef = fullfile(paths.EPI.dir,'2_epi_meanvol_mask.nii.gz');
