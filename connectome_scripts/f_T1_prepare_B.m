@@ -240,7 +240,21 @@ if flags.T1.parc==1
         
         %---------------------------------------------------------%
         % Generate a cerebellum mask using FSL's FIRST.
-        FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+        if configs.T1.padfix == 1
+            FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+            FileAFNI=fullfile(paths.T1.dir,'pad5+orig.HEAD');
+            sentence=sprintf('%s/3dZeropad -I 5 -prefix %s/pad5 %s; %s/3dAFNItoNIFTI -prefix %s/pad5 %s',paths.AFNI,paths.T1.dir,FileIn,paths.AFNI,paths.T1.dir,FileAFNI);
+            [~,result]=system(sentence);
+            FileIn = fullfile(paths.T1.dir,'pad5.nii');
+            if exist(FileIn,'file')
+                [~,result]=system(sprintf('rm %s/pad5+orig*',paths.T1.dir));
+            else
+                fprintf(2,'zero padding T1_fov_denoised failed. Please debug..\n')
+                return
+            end
+        else
+            FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+        end
         FileRoot=fullfile(paths.T1.dir,'subj_2_std_subc');
         FileMat=fullfile(paths.T1.dir,'subj_2_std_subc_cort.mat');
         FileOut1=fullfile(paths.T1.dir,'L_cerebellum.nii.gz');
@@ -283,7 +297,9 @@ if flags.T1.parc==1
         [~,result]=system(sentence);
         sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
         [~,result]=system(sentence); 
-        
+        if configs.T1.padfix == 1
+            [~,result]=system(sprintf('rm %/pad5.nii',paths.T1.dir));
+        end
         %% add subcortical fsl parcellation to cortical parcellations
         if configs.T1.addsubcort == 1
             fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
