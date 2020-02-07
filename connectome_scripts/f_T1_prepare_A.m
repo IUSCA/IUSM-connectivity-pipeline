@@ -160,7 +160,7 @@ if flags.T1.bet==1
         else
             % ANTS brain extraction
             ANTSlog = fullfile(paths.T1.dir,'ants_bet.log');
-            sentence = sprintf('%s/antsBrainExtraction.sh -d 3 -a %s -e %s -m %s -o %s > %s',...
+            sentence = sprintf('LD_LIBRARY_PATH= %s/antsBrainExtraction.sh -d 3 -a %s -e %s -m %s -o %s > %s',...
                 paths.ANTS,fileIn,fileTemplate,fileProbability,fileOutroot,ANTSlog);
             [status,result]=system(sentence);
             [status,result]=system(sprintf('mv %s/T1_BrainExtractionMask.nii.gz %s',paths.T1.dir,fileIn2));
