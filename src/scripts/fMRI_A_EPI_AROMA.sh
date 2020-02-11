@@ -58,7 +58,7 @@ END
 
 
 echo "# =========================================================="
-echo "# 5. ICA-AROMA: Denoising. "
+echo "# 5.1 ICA-AROMA: Denoising. "
 echo "# =========================================================="
 
 if [[ ! -e "${EPIpath}/4_epi.nii.gz" ]]; then  

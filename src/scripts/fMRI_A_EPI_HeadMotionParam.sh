@@ -38,21 +38,25 @@ for i in range(columns):
     m_deriv = np.diff(m)
     motion_deriv[1:,i] = m_deriv
 
-fname=''.join([EPIpath,'/HMPreg/motion_deriv.txt'])
-np.savetxt(fname, motion_deriv,fmt='%2.7f')
-fname=''.join([EPIpath,'/HMPreg/motion.txt'])
-np.savetxt(fname, motion,fmt='%2.7f')
+## save the data
+# fname=''.join([EPIpath,'/HMPreg/motion_deriv.txt'])
+# np.savetxt(fname, motion_deriv,fmt='%2.7f')
+# fname=''.join([EPIpath,'/HMPreg/motion.txt'])
+# np.savetxt(fname, motion,fmt='%2.7f')
+fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
+np.savez(fname,motion_deriv=motion_deriv,motion=motion)
 
 if numReg == 24:
     motion_sq = np.power(motion,2)
     motion_deriv_sq = np.power(motion_deriv,2)
 
 
-fname=''.join([EPIpath,'/HMPreg/motion_sq.txt'])
-np.savetxt(fname, motion_sq,fmt='%2.7f')
-fname=''.join([EPIpath,'/HMPreg/motion_deriv_sq.txt'])
-np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
-
+# fname=''.join([EPIpath,'/HMPreg/motion_sq.txt'])
+# np.savetxt(fname, motion_sq,fmt='%2.7f')
+# fname=''.join([EPIpath,'/HMPreg/motion_deriv_sq.txt'])
+# np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
+fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
+np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
 
 END
 }
@@ -60,7 +64,7 @@ END
 ##############################################################################
 
 echo "# =========================================================="
-echo "# 5. Head Motion Parameter Regression. "
+echo "# 5.1 Head Motion Parameter Regression. "
 echo "# =========================================================="
 
 if [[ ! -e "${EPIpath}/4_epi.nii.gz" ]]; then  

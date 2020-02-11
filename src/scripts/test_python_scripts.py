@@ -329,51 +329,49 @@
 
 #source activate /N/u/aiavenak/Carbonate/miniconda3/envs/scikit-env
 
-import os.path
-import numpy as np
-import nibabel as nib
-from skimage import measure 
+# import os.path
+# import numpy as np
+# import nibabel as nib
+# from skimage import measure 
 
 
-EPIpath='/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/EPI/'
+# EPIpath='/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1/EPI/'
 
-fileIn="rT1_GM_parc_yeo7.nii.gz"                        
-fileOut="rT1_GM_parc_yeo7_clean.nii.gz" 
-thr=0.2
-
-
-fileIn=''.join([EPIpath,fileIn])
-v=nib.load(fileIn)  
-v_vol=v.get_fdata()
-print(v_vol.shape)
-N = int(np.max(v_vol))
-print("N = ",N)
-vol_clean = np.zeros(v_vol.shape)
-print("vol_clean shape ",vol_clean.shape)
-
-for i in range(1,2):
-    print(i)
-    vi = v_vol == i
-    vi = vi.astype(bool).astype(int)
-    #print(vi)
-    print("number of non-zero elements",np.count_nonzero(vi))
-    clusters = measure.label(vi,neighbors=8,return_num=True)
-    print("number of clusters ",clusters[1])
-    for j in range(1,clusters[1]+1):
-        vj = np.count_nonzero(clusters[0] == j)
-        print("label ",j, "num elements ",vj)
-        if vj > 8:
-            print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
-            vol_clean[clusters[0] == j] = i
-            print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+# fileIn="rT1_GM_parc_yeo7.nii.gz"                        
+# fileOut="rT1_GM_parc_yeo7_clean.nii.gz" 
+# thr=0.2
 
 
+# fileIn=''.join([EPIpath,fileIn])
+# v=nib.load(fileIn)  
+# v_vol=v.get_fdata()
+# print(v_vol.shape)
+# N = int(np.max(v_vol))
+# print("N = ",N)
+# vol_clean = np.zeros(v_vol.shape)
+# print("vol_clean shape ",vol_clean.shape)
 
-fileOut=''.join([EPIpath,fileOut])
+# for i in range(1,2):
+#     print(i)
+#     vi = v_vol == i
+#     vi = vi.astype(bool).astype(int)
+#     #print(vi)
+#     print("number of non-zero elements",np.count_nonzero(vi))
+#     clusters = measure.label(vi,neighbors=8,return_num=True)
+#     print("number of clusters ",clusters[1])
+#     for j in range(1,clusters[1]+1):
+#         vj = np.count_nonzero(clusters[0] == j)
+#         print("label ",j, "num elements ",vj)
+#         if vj > 8:
+#             print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
+#             vol_clean[clusters[0] == j] = i
+#             print("nonzero elements in vol_clean :",np.count_nonzero(vol_clean))
 
-v_vol_new = nib.Nifti1Image(v_vol.astype(np.float32),v.affine,v.header)
-nib.save(v_vol_new,fileOut)        
 
 
+# fileOut=''.join([EPIpath,fileOut])
+
+# v_vol_new = nib.Nifti1Image(v_vol.astype(np.float32),v.affine,v.header)
+# nib.save(v_vol_new,fileOut)        
 
 #source deactivate

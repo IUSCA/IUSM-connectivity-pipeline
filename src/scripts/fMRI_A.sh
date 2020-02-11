@@ -195,7 +195,9 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             fi            
 
             if ${flags_EPI_NuisanceReg}; then
-                log "-------- NuisanceReg ----------"
+                echo "# =========================================================="
+                echo "# 5  Nuisance Regression. "
+                echo "# =========================================================="
 
                 if ${flags_NuisanceReg_AROMA}; then
 
@@ -238,7 +240,24 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_PhysiolReg. exiting."
                     exit 1
                 fi  
+            else
+                log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
+
+            if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
+
+                echo "APPLYING REGRESSORS"
+
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
+                    exit 1
+                fi  
+            fi             
 
 
             if ${flags_EPI_DemeanDetrend}; then

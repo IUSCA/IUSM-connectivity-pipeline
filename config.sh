@@ -264,6 +264,9 @@ if $fMRI_A; then
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
 		fi
 
+	export flags_EPI_GS=true # global signal regression 
+        export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
+
 
 	export flags_EPI_DemeanDetrend=false;
 
@@ -271,7 +274,7 @@ if $fMRI_A; then
 		export configs_EPI_scrubtime=15
 	# GS is a subflag of Motion Regressors. 
 	# If equals 1 global signal regression is done, if 0 it is not done.
-		export flags_EPI_GS=1
+		
 		export configs_EPI_FDth='0.20';
 
 fi
