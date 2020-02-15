@@ -1,4 +1,4 @@
-function [RT]=get_readout(paths,dicomext)
+function [RT]=get_readout(paths,dicomext,modality)
 %                               GET_READOUT
 % Obtain readout time from dicom data for distortion correction in FSL EDDY.
 %
@@ -25,10 +25,13 @@ function [RT]=get_readout(paths,dicomext)
 %
 %%
 % set paths and check for dicom directory
-if isfield(paths, 'EPI')
+if modality==1
     dicomPath=fullfile(paths.EPI.dir,'DICOMS');
-else
+elseif modality==2
     dicomPath=fullfile(paths.DWI.dir,'DICOMS');
+else
+    fprintf(2,'Modality nor specified for get_readout. Exiting..\n')
+    return
 end
 
     if length(dir(dicomPath))<= 2 %( '.' '..' are first 2 returns)

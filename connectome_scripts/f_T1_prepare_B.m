@@ -183,13 +183,14 @@ end
 %% Intersect of parcellations with GM
 if flags.T1.parc==1
 % Gray matter masking of native space parcellations
+    counter = 0;
     for k=1:length(parcs.pdir) % for every indicated parcellation
-        fprintf('%s parcellation intersection with GM\n',parcs.plabel(k).name) 
         fileIn = fullfile(paths.T1.dir,strcat('T1_parc_',parcs.plabel(k).name,'.nii.gz'));
         if exist(fileIn,'file') ~= 2
             warning('%s not found. Exiting...',fileIn')
             return
         end
+        fprintf('%s parcellation intersection with GM\n',parcs.plabel(k).name) 
         fileOut = fullfile(paths.T1.dir,strcat('T1_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
         % Dilate the parcellation.
         sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileIn,fileOut);
@@ -217,33 +218,36 @@ if flags.T1.parc==1
         sentence = sprintf('rm %s %s %s',fileOut,fileOut3);
         [~,result]=system(sentence);
     if parcs.pcort(k).true == 1
+        counter=counter+1;
         %-------------------------------------------------------------------------%
         % Clean up the cortical parcellation by removing subcortical and
         % cerebellar gray matter.
-    
-        % Generate inverse subcortical mask to isolate cortical portion of parcellation.
-        fileIn = fullfile(paths.T1.dir,'T1_subcort_mask.nii.gz');
-        fileOut = fullfile(paths.T1.dir,'T1_subcort_mask_dil.nii.gz');
-        fileMas = fullfile(paths.T1.dir,'T1_GM_mask.nii.gz');
-        sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileIn,fileOut);
-        [~,result]=system(sentence);
-        sentence = sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,fileOut,fileMas,fileOut);
-        [~,result]=system(sentence);
-        fileMas2 = fullfile(paths.T1.dir,'T1_subcort_mask_dil_inv.nii.gz');
-        sentence = sprintf('%s/fslmaths %s -binv %s',paths.FSL,fileOut,fileMas2);
-        [~,result]=system(sentence);
+        if counter == 1
+            % Generate inverse subcortical mask to isolate cortical portion of parcellation.
+            fileIn = fullfile(paths.T1.dir,'T1_subcort_mask.nii.gz');
+            fileOut = fullfile(paths.T1.dir,'T1_subcort_mask_dil.nii.gz');
+            fileMas = fullfile(paths.T1.dir,'T1_GM_mask.nii.gz');
+            sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileIn,fileOut);
+            [~,result]=system(sentence);
+            sentence = sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,fileOut,fileMas,fileOut);
+            [~,result]=system(sentence);
+            fileMas2 = fullfile(paths.T1.dir,'T1_subcort_mask_dil_inv.nii.gz');
+            sentence = sprintf('%s/fslmaths %s -binv %s',paths.FSL,fileOut,fileMas2);
+            [~,result]=system(sentence);
+        end
         %---------------------------------------------------------%
         % Apply subcortical inverse to cortical parcellations.
         fileOut = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'.nii.gz'));
         sentence = sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,fileOut,fileMas2,fileOut);
         [~,result]=system(sentence);
-        
         %---------------------------------------------------------%
         % Generate a cerebellum mask using FSL's FIRST.
+        if counter == 1
         if configs.T1.padfix == 1
             FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
             FileAFNI=fullfile(paths.T1.dir,'pad5+orig.HEAD');
-            sentence=sprintf('%s/3dZeropad -I 5 -prefix %s/pad5 %s; %s/3dAFNItoNIFTI -prefix %s/pad5 %s',paths.AFNI,paths.T1.dir,FileIn,paths.AFNI,paths.T1.dir,FileAFNI);
+            sentence=sprintf('%s/3dZeropad -I 5 -prefix %s/pad5 %s; %s/3dAFNItoNIFTI -prefix %s/pad5 %s',...
+                paths.AFNI,paths.T1.dir,FileIn,paths.AFNI,paths.T1.dir,FileAFNI);
             [~,result]=system(sentence);
             FileIn = fullfile(paths.T1.dir,'pad5.nii');
             if exist(FileIn,'file')
@@ -279,27 +283,47 @@ if flags.T1.parc==1
         FileOut=fullfile(paths.T1.dir,'Cerebellum_bin.nii.gz');
         sentence=sprintf('%s/fslmaths %s -add %s %s',paths.FSL,FileOut1,FileOut2,FileOut);
         [~,result]=system(sentence);
+        % remove extra slices if nesessary
+        if configs.T1.padfix == 1
+            FileAFNI=fullfile(paths.T1.dir,'cut5+orig.HEAD');
+            sentence=sprintf('%s/3dZeropad -I -5 -prefix %s/cut5 %s; %s/3dAFNItoNIFTI -prefix %s/cut5 %s',...
+                paths.AFNI,paths.T1.dir,FileOut,paths.AFNI,paths.T1.dir,FileAFNI);
+            [~,result]=system(sentence);
+            FileOut = fullfile(paths.T1.dir,'cut5.nii');
+            if exist(FileOut,'file')
+                [~,result]=system(sprintf('rm %s/cut5+orig*',paths.T1.dir));
+            else
+                fprintf(2,'zero padded slice removal in Cerebellum_bin failed. Please debug..\n')
+                return
+            end
+        end
+        %-----------------------------------------------------------------%
         % Fill holes in the mask.
         sentence=sprintf('%s/fslmaths %s -fillh %s',paths.FSL,FileOut,FileOut);
         [~,result]=system(sentence);
+        [~,result]=system(['rm ' FileOut]);
         % Invert the cerebellum mask.
+        FileOut = fullfile(paths.T1.dir,'cut5.nii.gz');
         FileInv=fullfile(paths.T1.dir,'Cerebellum_Inv.nii.gz');
         sentence=sprintf('%s/fslmaths %s -binv %s',paths.FSL,FileOut,FileInv);
         [~,result]=system(sentence);
-        %-------------------------------------------------------------------------%    
-        % Remove any parcellation contamination of the cerebellum.
-        FileIn=fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'.nii.gz'));
-        sentence=sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,FileIn,FileInv,FileIn);
-        [~,result]=system(sentence);
-        %-------------------------------------------------------------------------%
+        %-----------------------------------------------------------------%
         % 07.25.2017 EJC Remove intermediates of the clean-up.
         sentence = sprintf('rm %s*;rm %s*;rm %s*;',FileRoot,FileOut1,FileOut2);
         [~,result]=system(sentence);
         sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
         [~,result]=system(sentence); 
         if configs.T1.padfix == 1
-            [~,result]=system(sprintf('rm %/pad5.nii',paths.T1.dir));
+            [~,result]=system(sprintf('rm %s/pad5.nii',paths.T1.dir));
         end
+        end
+        %-------------------------------------------------------------------------%    
+        % Remove any parcellation contamination of the cerebellum.
+        FileIn=fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'.nii.gz'));
+        FileInv=fullfile(paths.T1.dir,'Cerebellum_Inv.nii.gz');
+        sentence=sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,FileIn,FileInv,FileIn);
+        [~,result]=system(sentence);
+        %-------------------------------------------------------------------------%    
         %% add subcortical fsl parcellation to cortical parcellations
         if configs.T1.addsubcort == 1
             fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');

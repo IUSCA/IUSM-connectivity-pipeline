@@ -265,7 +265,7 @@ if flags.EPI.SpinEchoUnwarp==1
             [~,result]=system(sentence);
             
             % Generate an acqparams text file based on number of field maps.
-            configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext);
+            configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext,1);
             fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
             APstr=[0 -1 0 configs.EPI.SEreadOutTime];
             PAstr=[0 1 0 configs.EPI.SEreadOutTime];
@@ -1091,7 +1091,7 @@ end
             end
         elseif configs.EPI.numPC > 0 && configs.EPI.numPC < 6
             fprintf('    -- Writing prespecified removal of %d components\n',configs.EPI.numPC)
-            RegressMatrix{1,1}=regressors;
+            RegressMatrix{1,1}=[regressors,CSFpca(:,configs.EPI.numPC),WMpca(:,configs.EPI.numPC)];
             zRegressMatrix{1,1} = zscore(RegressMatrix{1,1});
         end
     end

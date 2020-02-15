@@ -123,7 +123,7 @@ flags.T1.seg = 1;
     % use 'mutualinfo' if the default fails
     configs.T1.flirtdof6cost = 'mutualinfo'; % 'corratio'-fsl default; 'mutualinfo'-recommended 
 flags.T1.parc=1;
-    configs.T1.padfix = 1;
+    configs.T1.padfix = 0;  % zero-pad inferior T1 slices if suncort/cerebellar seg is failing
     configs.T1.numDilReMask = 3;
     configs.T1.addsubcort=1; % add FSL subcortical to cortical parcellations ONLY
                              % to nodal parcellations individuals regions
