@@ -258,14 +258,14 @@ if $fMRI_A; then
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
 			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
-										  # leave empty to include all
+										  # set to 6 to include all ??
 		else
 			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
 		fi
 
-	export flags_EPI_GS=true # global signal regression 
-        export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
+		export flags_EPI_GS=true # global signal regression 
+			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
 
 
 	export flags_EPI_DemeanDetrend=false;

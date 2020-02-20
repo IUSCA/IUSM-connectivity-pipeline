@@ -375,3 +375,36 @@
 # nib.save(v_vol_new,fileOut)        
 
 #source deactivate
+
+
+import os
+import numpy as np
+import nibabel as nib
+
+
+EPIpath='/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1_clean/EPI'
+fileIN="/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1_clean/EPI/4_epi.nii.gz"
+aCompCorr='true'
+num_comp=int(5)
+PhReg_path='/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS/10692_1_clean/EPI/HMPreg/aCompCorr'
+numGS=int(4)
+
+
+### load data and masks
+resting = nib.load(fileIN)
+resting_vol = resting.get_data()
+[sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
+print(sizeX,sizeY,sizeZ,numTimePoints)
+
+fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
+volCSFvent = nib.load(fname)
+volCSFvent_vol = volCSFvent.get_data()
+
+fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
+volWM = nib.load(fname)
+volWM_vol = volWM.get_data()
+
+fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
+volGS = nib.load(fname)
+volGS_vol = volGS.get_data()
+

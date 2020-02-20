@@ -231,6 +231,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_PhysiolReg}; then
 
+                module load matlab
+
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_PhysiolReg.sh"
                 echo $cmd
                 eval $cmd
@@ -240,38 +242,41 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_PhysiolReg. exiting."
                     exit 1
                 fi  
+
+                module unload matlab
+
             else
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
 
-            if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
+            # if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
 
-                echo "APPLYING REGRESSORS"
+            #     echo "APPLYING REGRESSORS"
 
-                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
-                echo $cmd
-                eval $cmd
-                exitcode=$?
+            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
+            #     echo $cmd
+            #     eval $cmd
+            #     exitcode=$?
 
-                if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
-                    exit 1
-                fi  
-            fi             
+            #     if [[ ${exitcode} -ne 0 ]] ; then
+            #         echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
+            #         exit 1
+            #     fi  
+            # fi             
 
 
-            if ${flags_EPI_DemeanDetrend}; then
+            # if ${flags_EPI_DemeanDetrend}; then
 
-                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_DemeanDetrend.sh"
-                echo $cmd
-                eval $cmd
-                exitcode=$?
+            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_DemeanDetrend.sh"
+            #     echo $cmd
+            #     eval $cmd
+            #     exitcode=$?
 
-                if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
-                    exit 1
-                fi  
-            fi             
+            #     if [[ ${exitcode} -ne 0 ]] ; then
+            #         echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
+            #         exit 1
+            #     fi  
+            # fi             
 
             # if ${flags_EPI_MotionRegressors}; then
 

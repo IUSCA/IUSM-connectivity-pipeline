@@ -49,18 +49,52 @@ import nibabel as nib
 
 
 EPIpath=os.environ['EPIpath']
+print("EPIpath",EPIpath)
 fileIN=os.environ['fileIN']
+print("fileIN",fileIN)
 aCompCorr=os.environ['aCompCorr']
+print("aCompCorr",aCompCorr)
 num_comp=int(os.environ['num_comp'])
+print("num_comp",num_comp)
 PhReg_path=os.environ['PhReg_path']
+print("PhReg_path",PhReg_path)
 numGS=int(os.environ['numGS'])
+print("numGS",numGS)
+
+def get_ts(vol,numTP,rest):
+    numVoxels = np.count_nonzero(vol);
+    print("numVoxels - ",numVoxels)
+    mask = np.nonzero(vol != 0)
+    ts = np.zeros((numVoxels,numTP))
+    for ind in range(0,numTP):
+        rvol = rest[:,:,:,ind]
+        rvals = rvol[mask[0],mask[1],mask[2]]
+        ts[:,ind] = rvals
+    return ts,mask
+
+def get_pca(data, n_comp):
+    
+    from sklearn.decomposition import PCA
+
+    pca = PCA()  #(n_components = n_comp) 
+    pca.fit(data)
+    PC = pca.components_
+    print("PC shape ",PC.shape)
+    PCtop = PC[:,0:n_comp]
+    latent = pca.explained_variance_
+    print("latent: ",latent[0:n_comp])
+    variance = np.true_divide(np.cumsum(latent),np.sum(latent))
+    print("explained variance: ",variance[0:n_comp])
+    
+    # return PCtop,latent[0:n_comp],variance[0:n_comp]
+    return PCtop,variance[0:n_comp]
 
 
 ### load data and masks
 resting = nib.load(fileIN)
 resting_vol = resting.get_data()
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
-print(sizeX,sizeY,sizeZ,numTimePoints)
+print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
 volCSFvent = nib.load(fname)
@@ -75,58 +109,19 @@ volGS = nib.load(fname)
 volGS_vol = volGS.get_data()
 
 ### CSFvent time-series
-CSFnumVoxels = np.count_nonzero(volCSFvent_vol);
-print("CSFnumVoxels - ",CSFnumVoxels)
-volCSFvent_vol = volCSFvent_vol[...,np.newaxis]
-CSFmask = np.repeat(volCSFvent_vol,numTimePoints,axis=3)
-# # sanity check 
-# kk = CSFmask[:,:,:,1] - CSFmask[:,:,:,2] 
-# print(np.count_nonzero(kk))
-CSFts = resting_vol[CSFmask != 0]
-CSFts = np.reshape(CSFts,(CSFnumVoxels,numTimePoints))
+[CSFts,CSFmask] = get_ts(volCSFvent_vol,numTimePoints,resting_vol);
 
 ### WM time-series
-WMnumVoxels = np.count_nonzero(volWM_vol);
-print("WMnumVoxels - ",WMnumVoxels)
-volWM_vol = volWM_vol[...,np.newaxis]
-WMmask = np.repeat(volWM_vol,numTimePoints,axis=3)
-WMts = resting_vol[WMmask != 0]
-WMts = np.reshape(WMts,(WMnumVoxels,numTimePoints))
+[WMts,WMmask] = get_ts(volWM_vol,numTimePoints,resting_vol);
 
 ### Global Signal time-series
-GSnumVoxels = np.count_nonzero(volGS_vol);
-print("GSnumVoxels - ",GSnumVoxels)
-volGS_vol = volGS_vol[...,np.newaxis]
-GSmask = np.repeat(volGS_vol,numTimePoints,axis=3)
-GSts = resting_vol[GSmask != 0]
-GSts = np.reshape(GSts,(GSnumVoxels,numTimePoints))
-
-def get_pca(data, n_comp):
-    
-    from sklearn.decomposition import PCA
-
-    pca = PCA()#(n_components = n_comp) 
-    pca.fit_transform(data)
-    PC = pca.components_
-    # print(PC.shape)
-    PCtop = PC[0:n_comp,:]
-    latent = pca.explained_variance_
-    # print("latent: ",latent[0:n_comp])
-    expl_var_rat = pca.explained_variance_ratio_
-    # print("expl_var_rat ",expl_var_rat[0:n_comp])
-    k1 = np.cumsum(latent)
-    k2 = np.sum(latent)
-    variance = np.true_divide(k1,k2)
-    # print("explained variance: ",variance[0:n_comp])
-    
-    #return PCtop,latent[0:n_comp],variance[0:n_comp],expl_var_rat[0:n_comp]
-    return PCtop,expl_var_rat[0:n_comp]
+[GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol);
 
 
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
-    [CSFpca,CSFvar] = get_pca(CSFts,num_comp)
-    [WMpca,WMvar] = get_pca(WMts,num_comp)
+    [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
+    [WMpca,WMvar] = get_pca(WMts.T,num_comp)
     
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
@@ -138,21 +133,21 @@ else:
     CSFavg = np.mean(CSFts,axis=0)
     CSFderiv = np.append(0,np.diff(CSFavg));
     # transpose vectors
-    CSFavg = CSFavg[:,np.newaxis];
-    CSFderiv = CSFderiv[:,np.newaxis];
+    # CSFavg = CSFavg[:,np.newaxis];
+    # CSFderiv = CSFderiv[:,np.newaxis];
     CSFavg_sq = np.power(CSFavg,2)
     CSFderiv_sq = np.power(CSFderiv,2)
 
     WMavg = np.mean(WMts,axis=0)
     WMderiv = np.append(0,np.diff(WMavg));
     # transpose vectors
-    WMavg = WMavg[:,np.newaxis];
-    WMderiv = WMderiv[:,np.newaxis];
+    # WMavg = WMavg[:,np.newaxis];
+    # WMderiv = WMderiv[:,np.newaxis];
     WMavg_sq = np.power(WMavg,2)
     WMderiv_sq = np.power(WMderiv,2)
 
     # save the data
-    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF-CSF-CSF.npz'])
+    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.npz'])
     np.savez(fname,CSFavg=CSFavg,CSFavg_sq=CSFavg_sq,CSFderiv=CSFderiv,CSFderiv_sq=CSFderiv_sq,WMavg=WMavg,WMavg_sq=WMavg_sq,WMderiv=WMderiv,WMderiv_sq=WMderiv_sq)
     print("saved mean CSF WM signal, derivatives, and quadtatics")    
 
@@ -160,8 +155,8 @@ if 0 < numGS < 5:
     GSavg = np.mean(GSts,axis=0)
     GSderiv = np.append(0,np.diff(GSavg));
     # transpose vectors
-    GSavg = GSavg[:,np.newaxis];
-    GSderiv = GSderiv[:,np.newaxis];
+    # GSavg = GSavg[:,np.newaxis];
+    # GSderiv = GSderiv[:,np.newaxis];
     GSavg_sq = np.power(GSavg,2)
     GSderiv_sq = np.power(GSderiv,2)
 
@@ -195,6 +190,7 @@ if ${flags_NuisanceReg_AROMA}; then
             PhReg_path="${EPIpath}/AROMA/aCompCorr"    
         elif ${flags_PhysiolReg_WM_CSF}; then
             PhReg_path="${EPIpath}/AROMA/PhysReg"
+            configs_EPI_numPC=0
         fi          
     else
         log "ERROR ${fileIN} not found. Connot perform physiological regressors analysis"
@@ -241,5 +237,7 @@ else
 fi
 
 time_series ${EPIpath} ${fileIN} ${flags_PhysiolReg_aCompCorr} ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
+
+
 
 
