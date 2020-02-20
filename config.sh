@@ -250,7 +250,7 @@ if $fMRI_A; then
 			fi
 
 ########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=true;  
+	export flags_EPI_PhysiolReg=false;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
@@ -258,7 +258,7 @@ if $fMRI_A; then
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
 			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
-										  # set to 6 to include all ??
+										  # set to 6 to include all 
 		else
 			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
