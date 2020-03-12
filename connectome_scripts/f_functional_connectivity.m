@@ -629,6 +629,13 @@ if flags.EPI.RegT1==1
     sentence = sprintf('%s/convert_xfm -omat %s -concat %s %s',...
         paths.FSL,fileMatJoint,fileMat2,fileMat1);
     [~,result] = system(sentence);
+    % Join the epi_2_T1 dof and bbr matrices
+    fileMat1 = fullfile(paths.EPI.dir,'epi_2_T1_bbr.mat');
+    fileMat2 = fullfile(paths.EPI.dir,'epi_2_T1_dof6.mat');
+    fileMatJoint = fullfile(paths.EPI.dir,'epi_2_T1_bbr_dof6.mat');
+    sentence = sprintf('%s/convert_xfm -omat %s -concat %s %s',...
+        paths.FSL,fileMatJoint,fileMat2,fileMat1);
+    [~,result] = system(sentence);
 %-------------------------------------------------------------------------%
 end
 

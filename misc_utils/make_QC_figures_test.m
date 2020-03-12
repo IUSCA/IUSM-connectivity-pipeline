@@ -1,6 +1,6 @@
-%                     DATA_QUALITY_ANALYSIS_FIGURES
-%                          make_QA_figures_test
-%  This code generates Quality Analysis (QA) figures for data output by the
+%                     DATA_QUALITY_CONTROL_FIGURES
+%                          make_QC_figures_test
+%  This code generates Quality Control (QC) figures for data output by the
 %  IUSM-connectivity-pipeline. This script will create a QA directory at
 %  the level of the modality directories.
 %
@@ -15,17 +15,47 @@
 % USER INPUT:
 % system and sample set up file
 clearvars
-sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_template.m';
+%load('subjectLists/subjectList_IADC_all_postT1.mat','subjectList')
+subjectList(1).name = '10018_4';
+subjectList(end+1).name = '10019_1';
+subjectList(end+1).name = '10022_1';
+subjectList(end+1).name = '10031_5';
+subjectList(end+1).name = '10033_1';
+subjectList(end+1).name = '10037_1';
+subjectList(end+1).name = '10037_2';
+subjectList(end+1).name = '10037_3';
+subjectList(end+1).name = '10041_3';
+subjectList(end+1).name = '10047_6';
+subjectList(end+1).name = '10049_3';
+subjectList(end+1).name = '10050_7';
+subjectList(end+1).name = '10069_1';
+subjectList(end+1).name = '10089_3';
+subjectList(end+1).name = '10141_1';
+subjectList(end+1).name = '10147_2';
+subjectList(end+1).name = '10149_1';
+subjectList(end+1).name = '10158_1';
+subjectList(end+1).name = '10503_4';
+subjectList(end+1).name = '10503_6';
+subjectList(end+1).name = '10522_2_SAYKIN';
+subjectList(end+1).name = '10522_4_SAYKIN';
+subjectList(end+1).name = '10522_5_SAYKIN';
+subjectList(end+1).name = '10522_6_SAYKIN';
+subjectList(end+1).name = '10526_1_SAYKIN';
+subjectList(end+1).name = '10552_1';
+subjectList(end+1).name = '10552_2';
+subjectList(end+1).name = '10555_1';
+sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_ind.m';
 %
 % Set to 1 the modalities you wish to create QA figures for:
-section.T1brainmask = 1;
+section.T1brainmask = 0;
 section.T1reg = 1;
+section.T1masks = 0;
 section.T1parc = 0;
 section.EPI = 0;
 %
 %%
 run(sssu);
-MNI = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm.nii.gz');
+MNI = fullfile(paths.scripts,'connectome_scripts/templates/MNIparcs/MNI_templates/MNI152_T1_1mm.nii.gz');
 
 %%
 for k=1:length(subjectList)
@@ -84,7 +114,6 @@ for k=1:length(subjectList)
         disp('no T1_fov_denoised and/or T1_brain_mask found.')
     end
     end
-    
     if section.T1reg == 1
     %% 2-T1-warped_contour_onMNI
     % read in template and subject data
@@ -132,6 +161,55 @@ for k=1:length(subjectList)
         fprintf('%s: No T1_warped.nii.gz found.\n',subjectList(k).name)
     end
     end
+    if section.T1masks == 1
+    %% 3-T1_tissue_masks
+    disp(subjectList(k).name)
+    paths.subject=fullfile(paths.data,subjectList(k).name); % path to subject
+    paths.QAdir=fullfile(paths.subject,'QC_figures'); %output directory
+    if ~exist(paths.QAdir,'dir')
+        mkdir(paths.QAdir) % make output directory if it doesn't exist
+    end
+    
+    masks=struct;
+    masks(1).name = 'T1_subcort_mask.nii.gz';
+    masks(2).name = 'Cerebellum_bin.nii.gz';
+    masks(3).name = 'T1_mask_CSFvent.nii.gz';
+    Subj_T1=fullfile(paths.subject,configs.name.T1);
+    if exist(fullfile(Subj_T1,masks(2).name),'file')
+    T1=MRIread(fullfile(Subj_T1,'T1_fov_denoised.nii'));
+    f3=figure;
+    for mm = 1:length(masks)
+        tmp_mask=MRIread(fullfile(Subj_T1,masks(mm).name));
+        [X,Y,Z]=ind2sub(size(tmp_mask.vol),find(tmp_mask.vol>0));
+        if mm==1
+            scatter3(X(:),Y(:),Z(:),2,'filled');
+            xlim([1 size(tmp_mask.vol,1)])
+            ylim([1 size(tmp_mask.vol,2)])
+            zlim([1 size(tmp_mask.vol,3)])
+            hold on
+        elseif mm ==2
+            scatter3(X(:),Y(:),Z(:),2,'filled','MarkerEdgeAlpha',.05,'MarkerFaceAlpha',.05);
+        elseif mm ==3
+            scatter3(X(:),Y(:),Z(:),2,'filled','MarkerEdgeAlpha',.2,'MarkerFaceAlpha',.2);
+        end
+        clear tmp_mask
+    end
+    hold off
+    legend({'Subcortical','Cerebellar','Ventricular'},'Location','northeast')
+    title(subjectList(k).name,'Interpreter','none')
+    
+    fileout = fullfile(paths.QAdir,'3-subcort_vols.png');
+    count=length(dir(strcat(fileout(1:end-4),'*')));
+    if count > 0
+        fileout = fullfile(paths.QAdir,sprintf('3-subcort_vols_v%d.png',count+1));
+    end 
+    print(fileout,'-dpng','-r300')
+    close all
+    else
+        fprintf('Subject %s no Cerebellum mask found!\n',subjectList(k).name)
+    end
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if section.T1parc == 1
     %% 3-GM_parc_on_fov_denoised
     % get a list of parcellation files

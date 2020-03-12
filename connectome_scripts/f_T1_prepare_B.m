@@ -207,8 +207,8 @@ if flags.T1.parc==1
         sentence = sprintf('%s/fslmaths %s -mul %s %s',paths.FSL,fileOut,fileMul,fileOut2);
         [~,result] = system(sentence);
         % Dilate and remask to fill GM mask a set number of times
+        fileOut3 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
         for i=1:configs.T1.numDilReMask
-            fileOut3 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
             sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut3);
             [~,result]=system(sentence);
             sentence = sprintf('%s/fslmaths %s -mul %s %s',paths.FSL,fileOut3,fileMul,fileOut2);

@@ -27,6 +27,7 @@ function [RT]=get_readout(paths,dicomext,modality)
 % set paths and check for dicom directory
 if modality==1
     dicomPath=fullfile(paths.EPI.dir,'DICOMS');
+    filejson=fullfile(paths.EPI.dir,'0_epi.json');
 elseif modality==2
     dicomPath=fullfile(paths.DWI.dir,'DICOMS');
 else
@@ -35,8 +36,8 @@ else
 end
 
     if length(dir(dicomPath))<= 2 %( '.' '..' are first 2 returns)
-        filejson=fullfile(paths.EPI.dir,'0_epi.json');
-        if exist(filejson,'file')
+        
+        if modality == 1 && exist(filejson,'file')
             jsonInfo=get_features_json(filejson,0,0);
             dim1=jsonInfo.acquisition_matrix(1);
             ees=jsonInfo.effective_echo_spacing;
