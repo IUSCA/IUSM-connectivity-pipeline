@@ -116,7 +116,9 @@ volGS_vol = volGS.get_data()
 
 ### Global Signal time-series
 [GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol);
-
+# # save mask for later
+# fname = ''.join([PhReg_path,'/GSmask.npz'])
+# np.savez(fname,GSmask=GSmask)
 
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
@@ -132,17 +134,11 @@ else:
     print("-------------Mean CSF and WM Regression--------------")
     CSFavg = np.mean(CSFts,axis=0)
     CSFderiv = np.append(0,np.diff(CSFavg));
-    # transpose vectors
-    # CSFavg = CSFavg[:,np.newaxis];
-    # CSFderiv = CSFderiv[:,np.newaxis];
     CSFavg_sq = np.power(CSFavg,2)
     CSFderiv_sq = np.power(CSFderiv,2)
 
     WMavg = np.mean(WMts,axis=0)
     WMderiv = np.append(0,np.diff(WMavg));
-    # transpose vectors
-    # WMavg = WMavg[:,np.newaxis];
-    # WMderiv = WMderiv[:,np.newaxis];
     WMavg_sq = np.power(WMavg,2)
     WMderiv_sq = np.power(WMderiv,2)
 

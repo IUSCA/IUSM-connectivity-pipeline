@@ -231,8 +231,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_PhysiolReg}; then
 
-                module load matlab
-
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_PhysiolReg.sh"
                 echo $cmd
                 eval $cmd
@@ -242,8 +240,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_PhysiolReg. exiting."
                     exit 1
                 fi  
-
-                module unload matlab
 
             else
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"

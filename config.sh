@@ -141,14 +141,16 @@ if $T1_PREPARE_A; then
 
 fi 
 
-# Set denoising option
-export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
-if ${flag_ANTS}; then 
-	export configs_T1_denoised="T1_denoised_ANTS" 
-else
-	export configs_T1_denoised="T1_denoised_SUSAN"
-fi
-
+#DON'T MODIFY
+#===========================================================================================
+	# Set denoising option
+	export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
+	if ${flag_ANTS}; then 
+		export configs_T1_denoised="T1_denoised_ANTS" 
+	else
+		export configs_T1_denoised="T1_denoised_SUSAN"
+	fi
+#===========================================================================================
 
 ################################################################################
 ############################# T1_PREPARE_B #####################################
@@ -246,22 +248,32 @@ if $fMRI_A; then
 			else                         # if using Head Motion Parameters
 				export flags_NuisanceReg_HeadParam=true
 					export configs_EPI_numReg=24  # 12 (orig and deriv) or 24 (+sq of 12)
-					export configs_EPI_scrub=1    # perform scrubbing based on FD and DVARS criteria
+						if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+							log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
+								Please set the corect value in the config.sh file"
+						fi			
+					export configs_EPI_scrub=true    # perform scrubbing based on FD and DVARS criteria
 			fi
 
 ########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=false;  
+	export flags_EPI_PhysiolReg=true;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
 		export flags_PhysiolReg_aCompCorr=true  
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
-			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
+			export configs_EPI_numPC=4; # 1-5; the maximum and recommended number is 5 
 										  # set to 6 to include all 
 		else
 			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
+					if [[ "${configs_EPI_numPhys}" -ne "2" \
+					&& "${configs_EPI_numPhys}" -ne 4 \
+					&& "${configs_EPI_numPhys}" -ne 8 ]]; then
+						log "WARNING the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
+							Please set the corect value in the config.sh file"
+					fi	
 		fi
 
 		export flags_EPI_GS=true # global signal regression 

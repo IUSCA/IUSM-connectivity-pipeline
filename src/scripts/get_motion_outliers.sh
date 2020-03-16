@@ -29,8 +29,12 @@ scrub = scrub.astype(bool).astype(int)
 print("number of good vols: ",np.count_nonzero(scrub))
 
 
-fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
-np.savetxt(fname, scrub,fmt='%d')
+# fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
+# np.savetxt(fname, scrub,fmt='%d')
+
+fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
+np.savez(fname, scrub=scrub)
+
 
 END
 }
@@ -143,6 +147,6 @@ if [[ -e ${fileMetric} ]] && [[ -e ${fileOut1} ]]; then
     echo "calling f_load_motion_reg:"
     f_load_motion_reg ${EPIpath}
 else
-    echo "WARNING File ${fileMetric} and/or ${fileOut1} not found LALALA!"
+    echo "WARNING File ${fileMetric} and/or ${fileOut1} not found!"
     exit 1
 fi
