@@ -1,7 +1,8 @@
 # IUSM-connectivity-pipeline
 
 ## Contributors:
-   * Evgeny Chumin, Indiana University School of Medicine, 2018
+   * Evgeny Chumin, Indiana University School of Medicine, 2020
+   * Andrea Avena Koenigsberger, IU SCA, 2020
    * John West, Indiana University School of Medicine, 2018
    * Zikai Lin, Indiana University School of Medicine, 2018
    * Mario Dzemidzic, Indiana University School of Medicine, 2018
