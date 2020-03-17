@@ -1,5 +1,7 @@
 # IUSM-connectivity-pipeline
 
+## NOTE: This is legacy version of the IU School of Medicine Connectivity Pipeline dependent on Matlab. A refactored version of this pipeline written in Python and Bash is available here: https://github.com/IUSCA/IUSM-ConnPipe
+
 ## Contributors:
    * Evgeny Chumin, Indiana University School of Medicine, 2020
    * Andrea Avena Koenigsberger, IU SCA, 2020
