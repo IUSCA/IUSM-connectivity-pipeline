@@ -30,25 +30,36 @@ if modality==1
     filejson=fullfile(paths.EPI.dir,'0_epi.json');
 elseif modality==2
     dicomPath=fullfile(paths.DWI.dir,'DICOMS');
+    filejson=fullfile(paths.DWI.dir,'0_DWI.json');
 else
     fprintf(2,'Modality nor specified for get_readout. Exiting..\n')
     return
 end
-
+    disp('Computing readout time...')
     if length(dir(dicomPath))<= 2 %( '.' '..' are first 2 returns)
-        
-        if modality == 1 && exist(filejson,'file')
+        disp('No dicom files found. Looking for json file...')
+        if  exist(filejson,'file')
             jsonInfo=get_features_json(filejson,0,0);
-            dim1=jsonInfo.acquisition_matrix(1);
-            ees=jsonInfo.effective_echo_spacing;
+            if modality==1
+                dim1=jsonInfo.acquisition_matrix(1);
+                ees=jsonInfo.effective_echo_spacing;
+            elseif modality==2
+                dim1=jsonInfo.AcquisitionMatrixPE;
+                ees=jsonInfo.EffectiveEchoSpacing;
+            end
             AccF=1; % need to double check this for GE
             anofel = dim1/AccF;
-            RT = (anofel-1)*ees; 
+            if isfield(jsonInfo,'TotalReadoutTime')
+                RT = jsonInfo.TotalReadoutTime;
+            else
+                RT = (anofel-1)*ees;
+            end
         else
-            warning('No files found in dicom directory. Import terminated.')
+            warning('No json file found. Import terminated.')
             return
         end
     else
+        disp('Computing from dicom header information')
         dicomFiles=dir(dicomPath);
         i=1; % The while loop finds the index of the first dicom file
         while contains(dicomFiles(i).name,dicomext)==0 %JDW user defined DICOM ext

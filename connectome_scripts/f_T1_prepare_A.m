@@ -69,6 +69,15 @@ if flags.T1.denoiser==1
         return
     end
 end
+if configs.T1.skipDenoise == 1
+    fileIn = fullfile(paths.T1.dir,sprintf('%s.nii.gz',configs.name.T1));
+    fileOut = fullfile(paths.T1.dir,'T1_denoised.nii.gz');
+    [~,result]=system(sprintf('cp %s %s',fileIn,fileOut));
+    disp(result)
+    [~,result]=system(sprintf('gunzip -f %s',fileOut));
+    disp(result)
+    disp('Skipped Denoising. Copied T1 to T1_denoised for further processing.')
+end
 
 %% FSL ANAT
 if flags.T1.anat==1
@@ -95,9 +104,22 @@ if flags.T1.anat==1
             argcrop = '--nocrop';
         else
             argcrop = '';
-        end
-            
-        arganat = sprintf('%s %s',argbias,argcrop); 
+        end   
+        arganat = sprintf('%s %s',argbias,argcrop);
+        
+        if configs.T1.padfix == 1
+            FileAFNI=fullfile(paths.T1.dir,'pad5+orig.HEAD');
+            sentence=sprintf('%s/3dZeropad -I 5 -prefix %s/pad5 %s; %s/3dAFNItoNIFTI -prefix %s/pad5 %s',...
+                paths.AFNI,paths.T1.dir,fileIn1,paths.AFNI,paths.T1.dir,FileAFNI);
+            [~,result]=system(sentence);
+            fileIn1 = fullfile(paths.T1.dir,'pad5.nii');
+            if exist(fileIn1,'file')
+                [~,result]=system(sprintf('rm %s/pad5+orig*',paths.T1.dir));
+            else
+                fprintf(2,'zero padding T1_fov_denoised failed. Please debug..\n')
+                return
+            end
+        end 
         sentence = sprintf('%s/fsl_anat --noreg --nononlinreg --noseg %s -i %s',paths.FSL,arganat,fileIn1);
         [~,result] = system(sentence);
         fileIn2 = fullfile(paths.T1.anat,'T1_biascorr.nii.gz');
@@ -107,7 +129,7 @@ if flags.T1.anat==1
             sentence = sprintf('cp %s %s',fileIn2,fileOut);
             [status,result] = system(sentence);
             if status == 0
-                sentence = sprintf('gunzip %s',fileOut);
+                sentence = sprintf('gunzip -f %s',fileOut);
                 [status,result] = system(sentence);
                 if status == 0
                     disp('Completed FSL_ANAT')
@@ -122,6 +144,92 @@ if flags.T1.anat==1
         else
             warning('%s not found. Exiting...',fileIn2)
             return
+        end
+        % Subcortical masks
+        disp('Copying subcortical segmentation.')
+        fileIn = fullfile(paths.T1.anat,'T1_subcort_seg.nii.gz');
+        fileOut = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+        if exist(fileIn,'file') ~= 2
+            fprintf(2,'Subcortical segmentation not found. Exiting...\n')
+            return
+        end       
+        sentence = sprintf('cp %s %s',fileIn,fileOut);
+        [~,result] = system(sentence);
+        
+        % Generate a cerebellum mask using FSL's FIRST.
+        if configs.T1.padfix == 1
+            FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+            FileAFNI=fullfile(paths.T1.dir,'pad5+orig.HEAD');
+            sentence=sprintf('%s/3dZeropad -I 5 -prefix %s/pad5 %s; %s/3dAFNItoNIFTI -prefix %s/pad5 %s',...
+                paths.AFNI,paths.T1.dir,FileIn,paths.AFNI,paths.T1.dir,FileAFNI);
+            [~,result]=system(sentence);
+            FileIn = fullfile(paths.T1.dir,'pad5.nii');
+            if exist(FileIn,'file')
+                [~,result]=system(sprintf('rm %s/pad5+orig*',paths.T1.dir));
+            else
+                fprintf(2,'zero padding T1_fov_denoised failed. Please debug..\n')
+                return
+            end
+        else
+            FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+        end
+        
+        FileRoot=fullfile(paths.T1.dir,'subj_2_std_subc');
+        FileMat=fullfile(paths.T1.dir,'subj_2_std_subc_cort.mat');
+        FileOut1=fullfile(paths.T1.dir,'L_cerebellum.nii.gz');
+        FileOut2=fullfile(paths.T1.dir,'R_cerebellum.nii.gz');
+        paths.FSLroot=paths.FSL(1:end-4);
+        FileModel1=fullfile(paths.FSLroot,'data/first/models_336_bin/intref_puta/L_Cereb.bmv');
+        FileModel2=fullfile(paths.FSLroot,'data/first/models_336_bin/intref_puta/R_Cereb.bmv');
+        FileRef1=fullfile(paths.FSLroot,'data/first/models_336_bin/05mm/L_Puta_05mm.bmv');
+        FileRef2=fullfile(paths.FSLroot,'data/first/models_336_bin/05mm/R_Puta_05mm.bmv');
+        sentence=sprintf('%s/first_flirt %s %s -cort',paths.FSL,FileIn,FileRoot);
+        [~,result]=system(sentence);
+        sentence=sprintf('%s/run_first -i %s -t %s -o %s -n 40 -m %s -intref %s',paths.FSL,FileIn,FileMat,FileOut1,FileModel1,FileRef1);
+        [~,result]=system(sentence);
+        sentence=sprintf('%s/run_first -i %s -t %s -o %s -n 40 -m %s -intref %s',paths.FSL,FileIn,FileMat,FileOut2,FileModel2,FileRef2);
+        [~,result]=system(sentence);
+        % Clean up the edges of the cerebellar mask.
+        sentence=sprintf('%s/first_boundary_corr -s %s -i %s -b fast -o %s',paths.FSL,FileOut1,FileIn,FileOut1);
+        [~,result]=system(sentence);
+        sentence=sprintf('%s/first_boundary_corr -s %s -i %s -b fast -o %s',paths.FSL,FileOut2,FileIn,FileOut2);
+        [~,result]=system(sentence);
+        % Add the left and right cerebellum masks together.
+        FileOut=fullfile(paths.T1.dir,'Cerebellum_bin.nii.gz');
+        sentence=sprintf('%s/fslmaths %s -add %s %s',paths.FSL,FileOut1,FileOut2,FileOut);
+        [~,result]=system(sentence);
+        % remove extra slices if nesessary
+        if configs.T1.padfix == 1
+            FileAFNI=fullfile(paths.T1.dir,'cut5+orig.HEAD');
+            sentence=sprintf('%s/3dZeropad -I -5 -prefix %s/cut5 %s; %s/3dAFNItoNIFTI -prefix %s/cut5 %s',...
+                paths.AFNI,paths.T1.dir,FileOut,paths.AFNI,paths.T1.dir,FileAFNI);
+            [~,result]=system(sentence);
+            FileOut2 = fullfile(paths.T1.dir,'cut5.nii');
+            if exist(FileOut2,'file')
+                [~,result]=system(sprintf('rm %s/cut5+orig*',paths.T1.dir));
+            else
+                fprintf(2,'zero padded slice removal in Cerebellum_bin failed. Please debug..\n')
+                return
+            end
+            [~,result]=system(sprintf('mv %s %s',FileOut2,FileOut));
+            [~,result]=system(['rm ' FileOut2]);
+        end 
+        %-----------------------------------------------------------------%
+        % Fill holes in the mask.
+        sentence=sprintf('%s/fslmaths %s -fillh %s',paths.FSL,FileOut,FileOut);
+        [~,result]=system(sentence);
+        % Invert the cerebellum mask.
+        FileInv=fullfile(paths.T1.dir,'Cerebellum_Inv.nii.gz');
+        sentence=sprintf('%s/fslmaths %s -binv %s',paths.FSL,FileOut,FileInv);
+        [~,result]=system(sentence);
+        %-----------------------------------------------------------------%
+        % 07.25.2017 EJC Remove intermediates of the clean-up.
+        sentence = sprintf('rm %s*;rm %s*;rm %s*;',FileRoot,FileOut1,FileOut2);
+        [~,result]=system(sentence);
+        sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
+        [~,result]=system(sentence); 
+        if configs.T1.padfix == 1
+            [~,result]=system(sprintf('rm %s/pad5.nii',paths.T1.dir));
         end
     else
         warning('%s not found. Exiting...',fileIn1)

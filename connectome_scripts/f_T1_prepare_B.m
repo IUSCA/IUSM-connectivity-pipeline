@@ -50,29 +50,23 @@ if flags.T1.seg==1
     [~,result] = system(sentence);  
     
     %% Subcortical masks
-    fileIn = fullfile(paths.T1.dir,'T1_denoised.anat/T1_subcort_seg.nii.gz');
     fileOut = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
-    if exist(fileIn,'file') ~= 2
+    if exist(fileOut,'file') ~= 2
         warning('%s not found. Exiting...',fileIn')
         return
-    end       
-    
-    sentence = sprintf('cp %s %s',fileIn,fileOut);
-    [~,result] = system(sentence);
-
-    sentence = sprintf('%s/fslmaths %s/T1_subcort_seg.nii.gz -bin %s/T1_subcort_mask.nii.gz',...
-        paths.FSL,paths.T1.dir,paths.T1.dir);
-    [~,result] = system(sentence);
+    end
 
     fileIn = fullfile(paths.T1.dir,'T1_subcort_mask.nii.gz');
-    fileMas = fullfile(paths.T1.dir,'T1_CSF_mask_inv.nii.gz');
-    fileOut = fileIn;
-    sentence = sprintf('%s/fslmaths %s -mas %s %s',...
-        paths.FSL,fileIn,fileMas,fileOut);
+    sentence = sprintf('%s/fslmaths %s -bin %s',paths.FSL,fileOut,fileIn);
     [~,result] = system(sentence);
 
-    sentence = sprintf('%s/fslmaths %s/T1_subcort_mask.nii.gz -mul -1 -add 1 %s/T1_subcort_mask_inv.nii.gz',...
-        paths.FSL,paths.T1.dir,paths.T1.dir);
+    fileMas = fullfile(paths.T1.dir,'T1_CSF_mask_inv.nii.gz');
+    sentence = sprintf('%s/fslmaths %s -mas %s %s',...
+        paths.FSL,fileIn,fileMas,fileIn);
+    [~,result] = system(sentence);
+
+    sentence = sprintf('%s/fslmaths %s -mul -1 -add 1 %s/T1_subcort_mask_inv.nii.gz',...
+        paths.FSL,fileIn,paths.T1.dir);
     [~,result] = system(sentence);
     
     %% Adding FIRST subcortical into tissue segmentation
