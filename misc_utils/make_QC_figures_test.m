@@ -16,6 +16,10 @@
 % system and sample set up file
 clearvars
 %load('subjectLists/subjectList_IADC_all_postT1.mat','subjectList')
+
+sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_ind.m';
+%
+clear subjectList %remove the above generated list
 subjectList(1).name = '10018_4';
 subjectList(end+1).name = '10019_1';
 subjectList(end+1).name = '10022_1';
@@ -44,12 +48,78 @@ subjectList(end+1).name = '10526_1_SAYKIN';
 subjectList(end+1).name = '10552_1';
 subjectList(end+1).name = '10552_2';
 subjectList(end+1).name = '10555_1';
-sssu = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/batch_files/system_and_sample_set_up_ind.m';
-%
+subjectList(end+1).name = '10563_1';
+subjectList(end+1).name = '10570_1';
+subjectList(end+1).name = '10576_2';
+subjectList(end+1).name = '10578_1';
+subjectList(end+1).name = '10581_1';
+subjectList(end+1).name = '10581_2';
+subjectList(end+1).name = '10592_1';
+subjectList(end+1).name = '10594_1';
+subjectList(end+1).name = '10595_1';
+subjectList(end+1).name = '10599_1';
+subjectList(end+1).name = '10601_1';
+subjectList(end+1).name = '10604_1';
+subjectList(end+1).name = '10605_1';
+subjectList(end+1).name = '10607_1';
+subjectList(end+1).name = '10607_2';
+subjectList(end+1).name = '10612_1';
+subjectList(end+1).name = '10613_1';
+subjectList(end+1).name = '10617_2';
+subjectList(end+1).name = '10623_1';
+subjectList(end+1).name = '10623_2';
+subjectList(end+1).name = '10628_1';
+subjectList(end+1).name = '10645_1';
+subjectList(end+1).name = '10648_1';
+subjectList(end+1).name = '10653_1';
+subjectList(end+1).name = '10670_1';
+subjectList(end+1).name = '10672_1';
+subjectList(end+1).name = '10673_2';
+subjectList(end+1).name = '10674_1';
+subjectList(end+1).name = '10674_2';
+subjectList(end+1).name = '10676_1';
+subjectList(end+1).name = '10678_1';
+subjectList(end+1).name = '10681_1';
+subjectList(end+1).name = '10696_1';
+subjectList(end+1).name = '10707_1';
+subjectList(end+1).name = '10708_1';
+subjectList(end+1).name = '10715_1';
+subjectList(end+1).name = '10719_2';
+subjectList(end+1).name = '10724_1';
+subjectList(end+1).name = '10734_1';
+subjectList(end+1).name = '10737_1';
+subjectList(end+1).name = '10738_1';
+subjectList(end+1).name = '10740_1';
+subjectList(end+1).name = '10741_1';
+subjectList(end+1).name = '10745_1';
+subjectList(end+1).name = '10746_1';
+subjectList(end+1).name = '10749_1';
+subjectList(end+1).name = '10757_1';
+subjectList(end+1).name = '10780_1';
+subjectList(end+1).name = '10783_1';
+subjectList(end+1).name = '10793_1';
+subjectList(end+1).name = '10799_1';
+subjectList(end+1).name = '10805_1';
+subjectList(end+1).name = '10807_2';
+subjectList(end+1).name = '10810_1';
+subjectList(end+1).name = '10813_1';
+subjectList(end+1).name = '10824_1';
+subjectList(end+1).name = '10835_1';
+subjectList(end+1).name = '10837_1';
+subjectList(end+1).name = '10839_1';
+subjectList(end+1).name = '10843_1';
+subjectList(end+1).name = '10849_1';
+subjectList(end+1).name = '10851_1';
+subjectList(end+1).name = '10855_1';
+subjectList(end+1).name = '10858_1';
+subjectList(end+1).name = '10862_1';
+subjectList(end+1).name = '10867_1';
+subjectList(end+1).name = '10872_1';
+subjectList(end+1).name = '10879_1';
 % Set to 1 the modalities you wish to create QA figures for:
 section.T1brainmask = 0;
-section.T1reg = 1;
-section.T1masks = 0;
+section.T1reg = 0;
+section.T1masks = 1;
 section.T1parc = 0;
 section.EPI = 0;
 %

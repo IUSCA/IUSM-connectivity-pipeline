@@ -32,10 +32,10 @@ data_raw = '/gpfs/projects/RadImagSci/CFN/projects/mci/aging/';
 data_target = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/datadir';
 %% 
 % possible sequence keywords
-          mprage = {'MPRAGE'};
-          rest = {'mbep2d','rest'};
+          mprage = {'T1w','MPRAGE'};
+          rest = {'rfMRI_REST','mbep2d','rest'};
             rest_tails={'_vv2bk','_scenc','_SBRef'};
-          dti = {'DTI','advdiff','stejskal','diff_prod','DIFF'};
+          dti = {'Diffusion','DTI','advdiff','stejskal','diff_prod','DIFF'};
             dti_tails={'_ADC','_TRACEW','_FA','_TENSOR','_PA','_SBRef','_ColFA','_LOWB','_ColorFA','_EXP'};
 %  Check status of target directory
 if exist(data_target,'dir')==7

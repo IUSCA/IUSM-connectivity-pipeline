@@ -289,21 +289,21 @@ if flags.T1.parc==1
             sentence=sprintf('%s/3dZeropad -I -5 -prefix %s/cut5 %s; %s/3dAFNItoNIFTI -prefix %s/cut5 %s',...
                 paths.AFNI,paths.T1.dir,FileOut,paths.AFNI,paths.T1.dir,FileAFNI);
             [~,result]=system(sentence);
-            FileOut = fullfile(paths.T1.dir,'cut5.nii');
-            if exist(FileOut,'file')
+            FileOut2 = fullfile(paths.T1.dir,'cut5.nii');
+            if exist(FileOut2,'file')
                 [~,result]=system(sprintf('rm %s/cut5+orig*',paths.T1.dir));
             else
                 fprintf(2,'zero padded slice removal in Cerebellum_bin failed. Please debug..\n')
                 return
             end
+            [~,result]=system(sprintf('mv %s %s',FileOut2,FileOut));
+            [~,result]=system(['rm ' FileOut2]);
         end
         %-----------------------------------------------------------------%
         % Fill holes in the mask.
         sentence=sprintf('%s/fslmaths %s -fillh %s',paths.FSL,FileOut,FileOut);
         [~,result]=system(sentence);
-        [~,result]=system(['rm ' FileOut]);
         % Invert the cerebellum mask.
-        FileOut = fullfile(paths.T1.dir,'cut5.nii.gz');
         FileInv=fullfile(paths.T1.dir,'Cerebellum_Inv.nii.gz');
         sentence=sprintf('%s/fslmaths %s -binv %s',paths.FSL,FileOut,FileInv);
         [~,result]=system(sentence);
