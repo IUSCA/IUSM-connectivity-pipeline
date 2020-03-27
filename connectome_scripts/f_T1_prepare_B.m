@@ -19,7 +19,7 @@ if flags.T1.reg2MNI==1
     disp('Registration between Native T1 and MNI space') 
     [paths,configs,parcs]=fsl_registration_parcellations_non_linear(paths,configs,parcs);
 end
-
+paths.MNIparcs = fullfile(paths.scripts,'connectome_scripts/templates/MNIparcs');
 %% Tissue-type segmentation; cleaning; and gray matter masking of parcellations
 if flags.T1.seg==1
     disp('Tissue-type Segmentation') 
