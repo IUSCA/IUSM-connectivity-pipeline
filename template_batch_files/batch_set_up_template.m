@@ -71,7 +71,7 @@ parcs.pnodal(2).true=1;
                     
     %  T1   %
 flags.global.T1_prepare_A = 1;
-flags.global.T1_prepare_B = 0;
+flags.global.T1_prepare_B = 1;
     %  fMRI  %
 flags.global.fMRI_A = 0;
     %  DWI   %
@@ -93,8 +93,7 @@ flags.T1.denoiser = 2; % denoising % 0 - do not denoise, copy input to output
                                    % 1 - denoise MRI
                                    % 2 - bypass section (do not copy input to output)
 flags.T1.anat = 1; % run FSL_anat 
-    configs.T1.padfix = 1;  % zero-pad inferior T1 slices if subcort/cerebellar seg is failing
-    configs.T1.bias = 1; % 0 = no; 1 = weak;
+    configs.T1.bias = 1; % 0 = no; 1 = weak; 2 = strong;
     configs.T1.crop = 1; % 0 = no; 1 = yes (lots already done by dcm2niix if used)
 flags.T1.bet = 0; % brain extraction and mask generation
     configs.T1.antsTemplate = 'MICCAI'; % 'MICCAI' or 'NKI' or 'bet'
@@ -111,7 +110,7 @@ flags.T1.re_extract = 0; % brain extraction with mask
                     %  SELECT T1_B SUBFLAGS  %
                     %------------------------%
                     
-flags.T1.reg2MNI=1;
+flags.T1.reg2MNI=0;
     configs.T1.useExistingMats=1;
     configs.T1.useMNIbrain=1; % use MNI152T1_brain (=1) rather than MNI152T1 (=0)
     configs.T1.fnirtSubSamp='4,2,2,1'; %subsampling for fnirt registration to MNI; fnirt default string = '4,2,1,1' pipeline default = '4,2,2,1'

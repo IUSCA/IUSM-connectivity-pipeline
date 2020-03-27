@@ -98,6 +98,8 @@ if flags.T1.anat==1
             argbias = '--nobias';
         elseif configs.T1.bias == 1
             argbias = '--weakbias';
+        elseif configs.T1.bias == 2
+            argbias = '--strongbias';
         else
             argbias = '';
         end
