@@ -216,6 +216,7 @@ if flags.T1.parc==1
             %-------------------------------------------------------------------------%
             % Clean up the cortical parcellation by removing subcortical and
             % cerebellar gray matter.
+            paths.T1.reg=fullfile(paths.T1.dir,'registration');
             if counter == 1
                 % Generate inverse subcortical mask to isolate cortical portion of parcellation.
                 fileIn = fullfile(paths.T1.dir,'T1_subcort_mask.nii.gz');
@@ -238,7 +239,7 @@ if flags.T1.parc==1
             % Generate a cerebellum mask using FSL's FIRST.
             if counter == 1
                 % inverse transfrom the MNI cerebellum mask
-                fileIn = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm_cerebellum.nii.gz');
+                fileIn = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_cerebellum.nii.gz');
                 fileWarpInv = fullfile(paths.T1.reg,'MNI2T1_warp.nii.gz');
                 fileRef = fullfile(paths.T1.reg,'T1_dof12.nii.gz');
                 fileOut = fullfile(paths.T1.reg,'cerebellum_unwarped.nii.gz');
