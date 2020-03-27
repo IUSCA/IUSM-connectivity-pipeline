@@ -56,11 +56,11 @@ parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(2).true=1;
 parcs.pnodal(2).true=1;
 
-% yeo 17 resting state network parcellation
-parcs.plabel(3).name='yeo17';
-parcs.pdir(3).name='yeo17_MNI152';
-parcs.pcort(3).true=1;
-parcs.pnodal(3).true=0;
+% DKI parcellation
+parcs.plabel(2).name='DKIcort';
+parcs.pdir(2).name='DKIcort';
+parcs.pcort(2).true=1;
+parcs.pnodal(2).true=1;
  
 %%
                     %-----------------------%
@@ -71,13 +71,12 @@ parcs.pnodal(3).true=0;
                     
     %  T1   %
 flags.global.T1_prepare_A = 1;
-flags.global.T1_prepare_B = 1;
+flags.global.T1_prepare_B = 0;
     %  fMRI  %
-flags.global.fMRI_A = 1;
-flags.global.fMRI_B = 0; % under revision; do not turn on
+flags.global.fMRI_A = 0;
     %  DWI   %
-flags.global.DWI_A = 1;
-flags.global.DWI_B = 2; % not fully tested; run at your own risk
+flags.global.DWI_A = 0;
+flags.global.DWI_B = 0; % not fully tested; run at your own risk
 flags.global.DWI_C = 0; % depricated; may not work
 
 %%
@@ -88,18 +87,21 @@ flags.global.DWI_C = 0; % depricated; may not work
                     %  SELECT T1_A SUBFLAGS  %
                     %------------------------%
                     
-flags.T1.dcm2niix = 1;  % dicom to nifti conversion 
+flags.T1.dcm2niix = 0;  % dicom to nifti conversion 
     configs.T1.useCropped = 0; % use cropped field-of-view output of dcm2niix
-flags.T1.denoiser = 1; % denoising
+flags.T1.denoiser = 2; % denoising % 0 - do not denoise, copy input to output
+                                   % 1 - denoise MRI
+                                   % 2 - bypass section (do not copy input to output)
 flags.T1.anat = 1; % run FSL_anat 
-    configs.T1.bias = 1; % 0 = no; 1 = weak; 2 = strong
+    configs.T1.padfix = 1;  % zero-pad inferior T1 slices if subcort/cerebellar seg is failing
+    configs.T1.bias = 1; % 0 = no; 1 = weak;
     configs.T1.crop = 1; % 0 = no; 1 = yes (lots already done by dcm2niix if used)
-flags.T1.bet = 1; % brain extraction and mask generation
+flags.T1.bet = 0; % brain extraction and mask generation
     configs.T1.antsTemplate = 'MICCAI'; % 'MICCAI' or 'NKI' or 'bet'
     configs.T1.betF = 03;  % These are brain extraction parameters within FSL bet. (0.2)
     configs.T1.betG = 0; % See fsl bet help page for more details. (0.15)
 % currently testing ANTS, which does not require bet inputs
-flags.T1.re_extract = 1; % brain extraction with mask
+flags.T1.re_extract = 0; % brain extraction with mask
 
 %%
                         %----------------%
@@ -123,8 +125,7 @@ flags.T1.seg = 1;
     % use 'mutualinfo' if the default fails
     configs.T1.flirtdof6cost = 'mutualinfo'; % 'corratio'-fsl default; 'mutualinfo'-recommended 
 flags.T1.parc=1;
-    configs.T1.padfix = 0;  % zero-pad inferior T1 slices if suncort/cerebellar seg is failing
-    configs.T1.numDilReMask = 3;
+    configs.T1.numDilReMask = 2;
     configs.T1.addsubcort=1; % add FSL subcortical to cortical parcellations ONLY
                              % to nodal parcellations individuals regions
                              % are added, while to others they are added as
@@ -199,32 +200,7 @@ flags.EPI.NuisanceReg = 1;
         configs.EPI.FDcut = []; % [] uses fsl outlier critera
         configs.EPI.DVARScut = [];
     flags.EPI.ROIs = 1; % extract parcellation timeseries
-%-------------------------------------------------------------------------% 
-
-% %% 
-%                     %------------------------%
-%                     %  MATRICES AND FIGURES  %
-%                     %         fMRI_B         %
-%                     %------------------------%
-%                     
-%                    %--------------------------%
-%                    %  SELECT fMRI_B SUBFLAGS  %
-%                    %--------------------------%
-% flags.EPI.FigsMotion=1; % fig 1 & 2 of motion and parameter regression
-% flags.EPI.FigsFC = 1;
-%     flags.EPI.SaveBlockMats=1; % save block-wise matrix
-% flags.EPI.SaveFigs = 1; % save .fig .eps .png
-% flags.EPI.SaveMats = 1;
-%                       %------------------%
-%                       %  SET PARAMETERS  %
-%                       %------------------%
-% configs.EPI.minVal=-0.7; % lower and upper r bound for connectome matrix visualization
-% configs.EPI.maxVal=0.7;
-% configs.EPI.numBins=40; % for the historgam number of bins
-% configs.EPI.Step = 1; % not sure ; something to do with scrubbing
-% configs.EPI.corrType = "Pearson"; % Types of correlation, 'Pearson', 'Kendall' or 'Spearman'.   
-% configs.EPI.minVoxelsROI = 4; % drop from 8 to 4-6 for large(r) voxels  % not used anymore 
-    
+%-------------------------------------------------------------------------%   
 %%
                         %------------------%
                         %  DWI PROCESSING  %

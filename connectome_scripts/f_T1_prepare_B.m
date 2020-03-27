@@ -237,6 +237,17 @@ if flags.T1.parc==1
         %---------------------------------------------------------%
         % Generate a cerebellum mask using FSL's FIRST.
         if counter == 1
+            % inverse transfrom the MNI cerebellum mask
+              sprintf('     %s --> T1',parcs.plabel(k).name)
+    disp('        unwarp')
+    fileRef = fullfile(paths.T1.reg,'T1_dof12.nii.gz');
+    fileOut = fullfile(paths.T1.reg,strcat(parcs.plabel(k).name,'_unwarped.nii.gz'));
+    sentence = sprintf('%s/applywarp --ref=%s --in=%s --warp=%s --out=%s --interp=nn',...
+        paths.FSL,fileRef,fileIn,fileWarpInv,fileOut);
+    [~,result] = system(sentence);
+            
+            
+            
         if configs.T1.padfix == 1
             FileIn=fullfile(paths.T1.dir,'T1_fov_denoised.nii');
             FileAFNI=fullfile(paths.T1.dir,'pad5+orig.HEAD');

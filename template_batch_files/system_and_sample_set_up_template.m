@@ -13,7 +13,7 @@
             %------------------------------------------------%
 
     % Add path to connectome scripts directory
-paths.scripts = '/path/to/where/you/put/IUSM-connectivity-pipeline';
+paths.scripts = '/N/u/echumin/Carbonate/IUSM-connectivity-pipeline';
 addpath(genpath(paths.scripts));
 
 %%  (This may/should already be set in your .bashrc)
@@ -38,17 +38,17 @@ paths.MRtrix = extractBefore(mrtrix,'/dwi2response');
     % 
     % consult readme and manual in the ICA-AROMA directory in
     % connectome_scripts for instalation instructions.
-[~,paths.python]=system('which python');
+%[~,paths.python]=system('which python');
     % if you want to use a different python distribution (other than that
     % on your system, commento ut line 40, and uncomment and set path in
     % line 43.
-% paths.python = '/path/to/your/python';
+ paths.python = '/N/u/echumin/Carbonate/miniconda3/bin/python3';
 %%
                     %------------------------------%
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/path/to/your/data/directory/';
+paths.data = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/datadir';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 
@@ -74,8 +74,8 @@ subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and 
     % use the following three lines as example. If processing more that 2
     % subjects copy and paste the second line as necessary.
     
-%clear subjectList %remove the above generated list
-%subjectList(1).name = 'SUBJECT1'; 
+clear subjectList %remove the above generated list
+subjectList(1).name = '10004_1'; 
 %subjectList(end+1).name = 'SUBEJCT2'; % copy this line for additional subjects
 
                     end
