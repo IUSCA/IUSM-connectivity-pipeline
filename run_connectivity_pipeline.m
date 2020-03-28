@@ -155,73 +155,73 @@ end
 end
 
 %%
-if flags.global.fMRI_B==1   
-    % Generate figures for all subjects in subjectList
-    for i=1:length(subjectList)
-        run(bst) % initialize default configs
-        paths.subject = fullfile(paths.data,subjectList(i).name);
-        paths.T1.dir=fullfile(paths.subject,configs.name.T1);
-        % check that subject path and T1 directory exist
-        if exist(paths.subject,'dir') && exist(paths.T1.dir,'dir')
-            % Generate list of EPI scan directories
-            dircont=dir(paths.subject); dircont(1:2)=[];% find content of subject dir
-            epiList=struct.empty;
-            for e=1:length(dircont)
-                if dircont(e).isdir==1 && ~isempty(strfind(dircont(e).name,configs.name.epiFolder))
-                    epiList(end+1).name=dircont(e).name; %#ok<*AGROW>
-                end
-            end
-            if ~isempty(epiList)
-                configs.EPI.sessions=epiList;
-                % For each session under this subject    
-                for j=1:length(epiList)
-                    % Operating on the scans set in configs
-                    if j >= configs.EPI.epiMin && j <= configs.EPI.epiMax
-                        paths.EPI.dir=fullfile(paths.subject,epiList(j).name);
-                        diary(fullfile(paths.EPI.dir,strcat('diary_',datestr(now,'yyyymmdd'),'.log')))
-                        if flags.EPI.GS==1
-                            paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
-                            GSreg_name = 'GSreg\_yes';
-                        elseif flags.EPI.GS==0
-                            paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
-                            GSreg_name = 'GSreg\_no';
-                        else
-                            warning('flags.EPI.GS not specified. Exiting...')
-                        end
-                        if exist(paths.EPI.epiGS,'dir')
-                            subjectinfo = strcat(subjectList(i).name,', ',epiList(j).name,', ',GSreg_name);
-                            disp('------------------------')
-                            fprintf('fMRI_B on %s\n',subjectinfo)
-                            fprintf('EPI series: %s\n',epiList(j).name)
-                            disp('------------------------')
-                            % Generate the figures
-                            [paths,flags,configs,parcs]=f_evaluateFC_WIP(paths,flags,configs,parcs,subjectinfo);
-                            close all;
-                            % save the cofiguration variables for this run
-                            configFile=fullfile(paths.subject,sprintf('configs_%s_B_%s.mat',epiList(j).name,datestr(now,'yyyymmdd')));
-                            if exist(configFile,'file')
-                                count=dir(fullfile(paths.subject,sprintf('configs_%s_B_%s*',epiList(j).name,datestr(now,'yyyymmdd'))));
-                                count=length(count);
-                                configFile=fullfile(paths.subject,sprintf('configs_%s_B_%s_run%d.mat',epiList(j).name,datestr(now,'yyyymmdd'),count+1));
-                            end
-                            save(configFile,'-struct','configs','EPI');
-                        else
-                            disp(subjectList(i).name)
-                            warning('Either GSReg_yes or _no directory does not exit; skipping subject')
-                        end
-                        diary off
-                    end
-                end
-            else
-                disp(subjectList(i).name)
-                warning('No %s containing session names found. Check for consistency of nomenclature',configs.name.epiFolder)
-            end
-        else
-            disp(subjectList(i).name)
-            warning('Either path to subject or %s not found',configs.name.epiFolder)
-        end
-    end
-end
+% if flags.global.fMRI_B==1   
+%     % Generate figures for all subjects in subjectList
+%     for i=1:length(subjectList)
+%         run(bst) % initialize default configs
+%         paths.subject = fullfile(paths.data,subjectList(i).name);
+%         paths.T1.dir=fullfile(paths.subject,configs.name.T1);
+%         % check that subject path and T1 directory exist
+%         if exist(paths.subject,'dir') && exist(paths.T1.dir,'dir')
+%             % Generate list of EPI scan directories
+%             dircont=dir(paths.subject); dircont(1:2)=[];% find content of subject dir
+%             epiList=struct.empty;
+%             for e=1:length(dircont)
+%                 if dircont(e).isdir==1 && ~isempty(strfind(dircont(e).name,configs.name.epiFolder))
+%                     epiList(end+1).name=dircont(e).name; %#ok<*AGROW>
+%                 end
+%             end
+%             if ~isempty(epiList)
+%                 configs.EPI.sessions=epiList;
+%                 % For each session under this subject    
+%                 for j=1:length(epiList)
+%                     % Operating on the scans set in configs
+%                     if j >= configs.EPI.epiMin && j <= configs.EPI.epiMax
+%                         paths.EPI.dir=fullfile(paths.subject,epiList(j).name);
+%                         diary(fullfile(paths.EPI.dir,strcat('diary_',datestr(now,'yyyymmdd'),'.log')))
+%                         if flags.EPI.GS==1
+%                             paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_yes');
+%                             GSreg_name = 'GSreg\_yes';
+%                         elseif flags.EPI.GS==0
+%                             paths.EPI.epiGS = fullfile(paths.EPI.dir,'GSreg_no');
+%                             GSreg_name = 'GSreg\_no';
+%                         else
+%                             warning('flags.EPI.GS not specified. Exiting...')
+%                         end
+%                         if exist(paths.EPI.epiGS,'dir')
+%                             subjectinfo = strcat(subjectList(i).name,', ',epiList(j).name,', ',GSreg_name);
+%                             disp('------------------------')
+%                             fprintf('fMRI_B on %s\n',subjectinfo)
+%                             fprintf('EPI series: %s\n',epiList(j).name)
+%                             disp('------------------------')
+%                             % Generate the figures
+%                             [paths,flags,configs,parcs]=f_evaluateFC_WIP(paths,flags,configs,parcs,subjectinfo);
+%                             close all;
+%                             % save the cofiguration variables for this run
+%                             configFile=fullfile(paths.subject,sprintf('configs_%s_B_%s.mat',epiList(j).name,datestr(now,'yyyymmdd')));
+%                             if exist(configFile,'file')
+%                                 count=dir(fullfile(paths.subject,sprintf('configs_%s_B_%s*',epiList(j).name,datestr(now,'yyyymmdd'))));
+%                                 count=length(count);
+%                                 configFile=fullfile(paths.subject,sprintf('configs_%s_B_%s_run%d.mat',epiList(j).name,datestr(now,'yyyymmdd'),count+1));
+%                             end
+%                             save(configFile,'-struct','configs','EPI');
+%                         else
+%                             disp(subjectList(i).name)
+%                             warning('Either GSReg_yes or _no directory does not exit; skipping subject')
+%                         end
+%                         diary off
+%                     end
+%                 end
+%             else
+%                 disp(subjectList(i).name)
+%                 warning('No %s containing session names found. Check for consistency of nomenclature',configs.name.epiFolder)
+%             end
+%         else
+%             disp(subjectList(i).name)
+%             warning('Either path to subject or %s not found',configs.name.epiFolder)
+%         end
+%     end
+% end
 
 %%
 if flags.global.DWI_A==1

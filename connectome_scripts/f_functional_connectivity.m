@@ -645,6 +645,9 @@ if flags.EPI.RegOthers==1
         warning('File %s',fullfile(paths.EPI.dir,'T1_2_epi_dof6_bbr.mat'),'does not exist. Skipping further analysis')
         return
       end
+    disp('------------------------------------')
+    disp('3b. Register Masks and Parcellations')
+    disp('------------------------------------')
 %-------------------------------------------------------------------------%    
     % brain
     fileIn = fullfile(paths.T1.dir,'T1_brain.nii.gz');
