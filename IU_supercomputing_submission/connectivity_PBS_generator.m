@@ -1,4 +1,4 @@
-function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set_up, batch_path, pipeline_path, ppn, vmem, walltime, email)
+function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set_up, batch_path, pipeline_path, ppn, vmem, walltime, email,subjperjob)
 % PBS and matlab wrapper generation script for Karst submissions
 %
 %  Author:  John D. West - jdwest@iupui.edu  5/24/2018
@@ -30,6 +30,7 @@ function connectivity_PBS_generator(subjectlist, batch_set_up, system_sample_set
 %       -wmem ->        RAM memory
 %       -walltime ->    max alloted job runtime
 %       -email ->       contact email for notifications of job status.
+%       -subjperjob ->  number of subjects to run in each job
 %
 %  You can find templates of the batch and system set up scripts in the 
 %  pipeline directory.
@@ -43,13 +44,17 @@ if ~exist(batch_path,'dir')
     mkdir(batch_path)
 end
 
+if ~exist('subjperjob','var')
+    subjperjob = 7;
+end
+
 numsubjects = length(subjectfolders);
-numPBS = floor(numsubjects/7); % Grabs number of loops needed to generate PBSscripts
+numPBS = floor(numsubjects/subjperjob); % Grabs number of loops needed to generate PBSscripts
 
 % Generate PBS scripts and wrappers for majority of subjects
 if numPBS+1>1
     for i=1:numPBS
-        subjectsforloop(1:7) = subjectfolders((i*7-7+1):i*7);
+        subjectsforloop(1:subjperjob) = subjectfolders((i*subjperjob-subjperjob+1):i*subjperjob);
         fidpbs = fopen([batch_path '/PBSconnectome_' subjectsforloop(1).name 'to' subjectsforloop(end).name],'w');
         fprintf(fidpbs, '#!/bin/bash\n');
         fprintf(fidpbs, ['#PBS -l nodes=1:ppn=' num2str(ppn) ',vmem=' num2str(vmem) 'gb,walltime=' num2str(walltime) ':00:00\n']);
@@ -70,16 +75,16 @@ if numPBS+1>1
         fprintf(fidpbs, 'module load ants\n');
         fprintf(fidpbs, 'module load mrtrix/3.0\n\n');
         fprintf(fidpbs, ['cd ' batch_path '\n\n']);        
-        fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(7).name ' &\n\n']);
+        fprintf(fidpbs, ['matlab -r PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(end).name ' &\n\n']);
         fprintf(fidpbs, 'wait\n');
         fclose(fidpbs);
-        fidwrap1 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(7).name '.m'],'w');
+        fidwrap1 = fopen([batch_path '/PBSmatlab_wrapper_' subjectsforloop(1).name 'to' subjectsforloop(end).name '.m'],'w');
         
-        for j=1:7
-             if j<=7
+        for j=1:subjperjob
+             if j<=subjperjob
                  
                     fprintf(fidwrap1, ['subjectList(' num2str(j) ',1).name = ''' subjectsforloop(j).name ''';\n']);
-                if j==7 
+                if j==subjperjob 
                 fprintf(fidwrap1, ['batch_set_up = ''' batch_set_up ''';\n']);
                 fprintf(fidwrap1, ['system_sample_set_up = ''' system_sample_set_up ''';\n']);
                 fprintf(fidwrap1, ['addpath ' pipeline_path ';\n']);
@@ -96,7 +101,7 @@ end
 %% 
 %  Make PBS script and wrappers for remaining subjects if needed
 
-subjectsremain = subjectfolders(numPBS*7+1:end); % grabs last subjects
+subjectsremain = subjectfolders(numPBS*subjperjob+1:end); % grabs last subjects
 numsubjectsremain = length(subjectsremain); % finds number of last subjects
 if numsubjectsremain>0
     fidpbs = fopen([batch_path '/PBSconnectome_' subjectsremain(1).name 'to' subjectsremain(end).name],'w');

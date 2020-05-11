@@ -194,10 +194,10 @@ if flags.DWI.topup == 1
 end
      
 %% FSL EDDY
-if flags.DWI.eddy == 1
-    disp('------------------')
-    disp('2. EDDY Correction')
-    disp('------------------')    
+if flags.DWI.eddyPREP == 1
+    disp('--------------------')
+    disp('2.a. EDDY Input Prep')
+    disp('--------------------')    
     
     % set paths
     paths.DWI.UNWARP = fullfile(paths.DWI.dir,configs.name.unwarpFolder);
@@ -216,65 +216,36 @@ if flags.DWI.eddy == 1
     if exist(paths.DWI.UNWARP,'dir') && exist(fullfile(paths.DWI.UNWARP,'topup_unwarped.nii.gz'),'file')
         % Inputs if topup was done
         fileIn = fullfile(paths.DWI.UNWARP,'topup_unwarped.nii.gz');
-        fileMean = fullfile(paths.DWI.EDDY,'meanb0_unwarped.nii.gz');
+        fileOut = fullfile(paths.DWI.EDDY,'b0_1.nii.gz');
+        sentence=sprintf('%s/fslroi %s %s 0 1',paths.FSL,fileIn,fileOut);
+        [~,result]=system(sentence); 
     else % if topup distortion not available
-       warning('Topup data not present; Will run EDYY without topup field.')
-       % Extract b0 volumes from dataset
+        fprintf(2,'Topup data not present; Will run EDYY without topup field.\n')
+       % Extract first b0 volume from dataset
         Bval = dlmread(fullfile(paths.DWI.dir,'0_DWI.bval'));
         B0_index = find(Bval<=configs.DWI.b0cut); B0_index=B0_index-1; % start at 0
         if isempty(B0_index)
-            warning('No b0 volumes identified. Check quality of 0_DWI.bval')
+            fprintf(2,'No b0 volumes identified. Check quality of 0_DWI.bval\n')
             return
         else
             disp('Identified B0 indices:')
             disp(B0_index)
-            fileIn = fullfile(paths.DWI.dir,'0_DWI.nii.gz');
-            numAP=length(B0_index);
-            % Extract B0 images from the 4D series
-            for i=1:numAP
-                fileOut = fullfile(paths.DWI.EDDY,sprintf('AP_b0_%d.nii.gz',B0_index(i)));
-                sentence=sprintf('%s/fslroi %s %s %d 1',paths.FSL,fileIn,fileOut,B0_index(i));
+            fileIn = fullfile(paths.DWI.dir,'0_DWI.nii.gz');     
+            fileOut = fullfile(paths.DWI.EDDY,'b0_1.nii.gz');
+                sentence=sprintf('%s/fslroi %s %s %d 1',paths.FSL,fileIn,fileOut,B0_index(1));
                 [~,result]=system(sentence); 
-            end    
         end
-        % create a list of AP volume names
-            % list all files in EDDY directory
-                % Should just be the B0 images
-        B0_list=dir(paths.DWI.EDDY);
-            % remove from list '.' and '..' 
-        B0_list(1:2)=[];
-            % generate file list for fslmerge
-        for i=1:length(B0_list)
-            fileTemp = fullfile(paths.DWI.EDDY,B0_list(i).name);
-            if i == 1
-                filesIn{1} = fileTemp;
-            else
-                filesIn = strcat(filesIn,{' '},fileTemp);
-            end
-        end
-            % merge into a 4D volume
-        fileOut=fullfile(paths.DWI.EDDY,'all_b0_raw.nii.gz');
-        sentence=sprintf('%s/fslmerge -t %s %s',paths.FSL,fileOut,filesIn{1});
-        [~,result]=system(sentence);
-        % Inputs if topup was not done.
-        fileIn = fullfile(paths.DWI.EDDY,'all_b0_raw.nii.gz');
-        fileMean = fullfile(paths.DWI.EDDY,'meanb0.nii.gz');
     end
-        
-    % generate mean B0 iamge
-    sentence = sprintf('%s/fslmaths %s -Tmean %s',...
-        paths.FSL,fileIn,fileMean);
-    [~,result]=system(sentence);
     % run FSL brain extration to get B0 brain mask
     fileBrain = fullfile(paths.DWI.EDDY,'b0_brain.nii.gz');
-    sentence = sprintf('%s/bet %s %s -f %.2f -m',paths.FSL,fileMean,fileBrain,configs.DWI.EDDYf);
+    sentence = sprintf('%s/bet %s %s -f %.2f -m',paths.FSL,fileOut,fileBrain,configs.DWI.EDDYf);
     [~,result]=system(sentence);  
     
     % Find location of b0 volumes in dataset
     Bval = dlmread(fullfile(paths.DWI.dir,'0_DWI.bval'));
     B0_index = find(Bval<=configs.DWI.b0cut); %#ok<*EFIND>
     if isempty(B0_index)
-        warning('No b0 volumes identified. Check quality of 0_DWI.bval')
+        fprintf(2,'No b0 volumes identified. Check quality of 0_DWI.bval\n')
         return
     end
     
@@ -311,7 +282,14 @@ if flags.DWI.eddy == 1
     end
         % Write out the index file
     dlmwrite(fullfile(paths.DWI.EDDY,'index.txt'),Index,'delimiter',' ')
-        
+end
+if flags.DWI.eddyRUN == 1
+    disp('-------------')
+    disp('2.b. Run EDDY')
+    disp('-------------') 
+    % set paths
+    paths.DWI.UNWARP = fullfile(paths.DWI.dir,configs.name.unwarpFolder);
+    paths.DWI.EDDY=fullfile(paths.DWI.dir,'EDDY');    
     % State EDDY inputs
     fileIn = fullfile(paths.DWI.dir,'0_DWI.nii.gz');
     fileMask = fullfile(paths.DWI.EDDY, 'b0_brain_mask.nii.gz');
@@ -330,24 +308,24 @@ if flags.DWI.eddy == 1
         % least 4 standard deviations lower than what is expected by the
         % Gaussian Process Prediction within EDDY.
         if exist(paths.DWI.UNWARP,'dir') && exist(fullfile(paths.DWI.UNWARP,'topup_results_fieldcoef.nii.gz'),'file')
-            sentence = sprintf('%s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --topup=%s --index=%s --acqp=%s --repol --out=%s',...
+            sentence = sprintf('LD_LIBRARY_PATH= %s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --topup=%s --index=%s --acqp=%s --repol --out=%s',...
                 paths.FSL,fileIn,fileMask,fileBvec,fileBval,fileTopup,fileIndex,fileAcqp,fileOut);
             [~,result]=system(sentence);
             disp(result)
         else % no topup field available
-            sentence = sprintf('%s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --index=%s --acqp=%s --repol --out=%s',...
+            sentence = sprintf('LD_LIBRARY_PATH= %s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --index=%s --acqp=%s --repol --out=%s',...
                 paths.FSL,fileIn,fileMask,fileBvec,fileBval,fileIndex,fileAcqp,fileOut);
             [~,result]=system(sentence);
             disp(result)
         end
     else % no repol
         if exist(paths.DWI.UNWARP,'dir') && exist(fullfile(paths.DWI.UNWARP,'topup_results_fieldcoef.nii.gz'),'file')
-            sentence = sprintf('%s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --topup=%s --index=%s --acqp=%s --out=%s',...
+            sentence = sprintf('LD_LIBRARY_PATH= %s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --topup=%s --index=%s --acqp=%s --out=%s',...
                 paths.FSL,fileIn,fileMask,fileBvec,fileBval,fileTopup,fileIndex,fileAcqp,fileOut);
             [~,result]=system(sentence); 
             disp(result)
         else% no topup field available
-            sentence = sprintf('%s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --index=%s --acqp=%s --out=%s',...
+            sentence = sprintf('LD_LIBRARY_PATH= %s/eddy_openmp --imain=%s --mask=%s --bvecs=%s --bvals=%s --index=%s --acqp=%s --out=%s',...
                 paths.FSL,fileIn,fileMask,fileBvec,fileBval,fileIndex,fileAcqp,fileOut);
             [~,result]=system(sentence);
             disp(result)
@@ -358,6 +336,7 @@ if flags.DWI.eddy == 1
 
     % For QC purpoces this created a difference (Delta image) between raw
     % and EDDY corrected diffusion data.
+    DWI =MRIread(fullfile(paths.DWI.dir,'0_DWI.nii.gz'));
     corrDWI=MRIread(sprintf('%s.nii.gz',fileOut));
     corrDWI.vol=corrDWI.vol - DWI.vol;
     MRIwrite(corrDWI,fullfile(paths.DWI.EDDY,'delta_DWI.nii.gz'))
@@ -416,12 +395,13 @@ if flags.DWI.DTIfit == 1
     
     % save verbose output
     dlmwrite(fullfile(paths.DWI.DTIfit,'dtifit.log'),result,'delimiter','')
-end    
-    % Preproc DWI_A is done.
+    
+        % Preproc DWI_A is done.
     disp('DWI_A is done.')
     disp('QC recommendations:')
     disp('1. Check topup_field.nii.gz in UNWARP')
     disp('2. Check delta_DWI.nii.gz in EDDY')
     disp('2b. If eddy_correct was ran check eddy_output also')
     disp('3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes')
+end    
 end

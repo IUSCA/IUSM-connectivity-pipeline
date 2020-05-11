@@ -83,9 +83,13 @@ if flags.DWI.MRtrix==1
     % !!! CONFIG NEEDS ADDED:
     % tournier is one of several algorith options; best choice can vary
     % depending on data quality (i.e. number of shells and directions)
-    sentence1=sprintf('LD_LIBRARY_PATH= dwi2response tournier -voxels %s -force -mask %s -fslgrad %s %s %s %s',...
+    sentence1=sprintf('dwi2response tournier -voxels %s -force -mask %s -fslgrad %s %s %s %s',...
         voxelsOUT,maskIN,bvecIN,bvalIN,dataIN,fileResponse);
     [~,dwi2response_return]=system(sentence1);
+    
+    % save return as log
+    filelog = fullfile(paths.DWI.mrtrix,'1-dwi2response.log');
+    dlmwrite(filelog,dwi2response_return,'delimiter','')
         
 %% constrained shperical deconvolution
     disp('2 - Constrained Spherical Deconvolution')
@@ -95,10 +99,14 @@ if flags.DWI.MRtrix==1
    % csd is one possible algorithm for csd estimation; best one is data
    % dependent
    % additional options may be needed for multi-shell data
-    sentence2=sprintf('LD_LIBRARY_PATH= dwi2fod csd -force -fslgrad %s %s -mask %s %s %s %s',...
+    sentence2=sprintf('dwi2fod csd -force -fslgrad %s %s -mask %s %s %s %s',...
             bvecIN,bvalIN,maskIN,dataIN,fileResponse,fileFOD);
     [~,csd_return]=system(sentence2);
         
+        % save return as log
+    filelog = fullfile(paths.DWI.mrtrix,'2-dwi2fod.log');
+    dlmwrite(filelog,csd_return,'delimiter','')
+    
 %% ACT tissue-type volume generation
     disp('3 - Anatomically Constrained Tractography')
     brainIN=fullfile(paths.DWI.dir,'rT1_dof6.nii.gz');
@@ -106,9 +114,13 @@ if flags.DWI.MRtrix==1
     
     % act needs distortion corrected data; should work with no dist corr,
     % but with nonlinear reg, but I havent tried it. 
-    sentence3=sprintf('LD_LIBRARY_PATH= 5ttgen fsl -force -premasked %s %s',brainIN,file5tt);
+    sentence3=sprintf('5ttgen fsl -force -premasked %s %s',brainIN,file5tt);
     [~,fsl5tt_return]=system(sentence3);
         
+        % save return as log
+    filelog = fullfile(paths.DWI.mrtrix,'3-act.log');
+    dlmwrite(filelog,fsl5tt_return,'delimiter','')
+    
 %% generate streamlines
     disp('4 - Generating Streamlines')
     %CONFIG: 10million streamlines could be user set to other numbers
@@ -120,14 +132,19 @@ if flags.DWI.MRtrix==1
     % CONFIG : act can be options if data does not allow it. 
     % There may be other options withing tckgen that could be useful, this
     % is just basic usage. 
-    sentence4=sprintf('LD_LIBRARY_PATH= tckgen %s %s -act %s -crop_at_gmwmi -algorithm iFOD2 -seed_dynamic %s -select 10M',...
+    sentence4=sprintf('tckgen -force %s %s -act %s -crop_at_gmwmi -algorithm iFOD2 -seed_dynamic %s -select 10M',...
         fileFOD,fileStreamlines,file5tt,fileFOD);
     [~,tckgen_return]=system(sentence4);
+    
+        % save return as log
+    filelog = fullfile(paths.DWI.mrtrix,'4-tckgen.log');
+    dlmwrite(filelog,tckgen_return,'delimiter','')
+    
 %% set min-max length boundaries
     disp('   Apply Length Filter')
     fileStreamlines2=fullfile(paths.DWI.mrtrix,'10m_10-200l_streamlines.tck');
     % CONFIG: minimum and maximum streamline lengths can be user set
-    sentence5=sprintf('LD_LIBRARY_PATH= tckedit -force -minlength 10 -maxlength 200 %s %s',fileStreamlines,fileStreamlines2);
+    sentence5=sprintf('tckedit -force -minlength 10 -maxlength 200 %s %s',fileStreamlines,fileStreamlines2);
     [~,tckedit_return]=system(sentence5);
     if exist(fileStreamlines2,'file')
         delete(fileStreamlines)
@@ -138,9 +155,13 @@ if flags.DWI.MRtrix==1
     fileFiltStreamlines=fullfile(paths.DWI.mrtrix,'1m_sift_streamlines.tck');
     % For SIFT ACT is pretty much a requirement, so if ACT cant be done, then 
     % sift shouldnt be done and tckgen can be done with less streamlines.
-    sentence6=sprintf('LD_LIBRARY_PATH= tcksift -force -act %s -term_number 1M %s %s %s',...
+    sentence6=sprintf('tcksift -force -act %s -term_number 1M %s %s %s',...
         file5tt,fileStreamlines2,fileFOD,fileFiltStreamlines);
-    [~,sift_return]=system(sentence6);    
+    [~,sift_return]=system(sentence6);  
+    
+        % save return as log
+    filelog = fullfile(paths.DWI.mrtrix,'5-sift.log');
+    dlmwrite(filelog,sift_return,'delimiter','')
     
 end
 
@@ -164,7 +185,7 @@ if flags.DWI.connMatrix==1
             % CONFIG symmetric could be optional, but its good practive to
             % have it
             % CONFIG: zero_diagonal can be optional
-            sentence7{k}=sprintf('LD_LIBRARY_PATH= tck2connectome -assignment_radial_search 2 -scale_invnodevol -symmetric -zero_diagonal -force %s %s %s',...
+            sentence7{k}=sprintf('tck2connectome -assignment_radial_search 2 -scale_invnodevol -symmetric -zero_diagonal -force %s %s %s',...
                 fileFiltStreamlines,fileParc,fileConnMatrix);
             [~,connectome_return{k}]=system(sentence7{k});
         end

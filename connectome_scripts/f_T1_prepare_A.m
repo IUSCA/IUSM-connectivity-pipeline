@@ -68,7 +68,7 @@ if flags.T1.denoiser==1
         warning(' %s.nii.gz not found. Exiting...',configs.name.T1)
         return
     end
-elseif flags.T1.denoiser==0
+elseif flags.T1.denoiser==2
     fileIn = fullfile(paths.T1.dir,sprintf('%s.nii.gz',configs.name.T1));
     fileOut = fullfile(paths.T1.dir,'T1_denoised.nii.gz');
     [~,result]=system(sprintf('cp %s %s',fileIn,fileOut));
@@ -178,6 +178,10 @@ if flags.T1.bet==1
         case 'NKI'
             fileTemplate = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/NKI/T_template.nii.gz');
             fileProbability = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz');
+            fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
+        case 'IXI'
+            fileTemplate = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/IXI/T_template2.nii.gz');
+            fileProbability = fullfile(paths.scripts,'connectome_scripts/templates/brainmask_templates/IXI/T_template_BrainCerebellumProbabilityMask.nii.gz');
             fprintf('%s brain mask template selected\n',configs.T1.antsTemplate)
         case 'bet'
             fprintf('Using bet -f and -g inputs to perform fsl bet with -B option\n')

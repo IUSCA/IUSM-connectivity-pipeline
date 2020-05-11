@@ -50,19 +50,23 @@ if flags.T1.seg==1
     [~,result] = system(sentence);  
     
     %% Subcortical masks
-    fileOut = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
-    if exist(fileOut,'file') ~= 2
-        warning('%s not found. Exiting...',fileIn')
+    fileSub = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+    if exist(fileSub,'file') ~= 2
+        warning('%s not found. Exiting...',fileSub)
         return
     end
-
+    
+    %binarize subcortical segmentation to a mask
     fileIn = fullfile(paths.T1.dir,'T1_subcort_mask.nii.gz');
-    sentence = sprintf('%s/fslmaths %s -bin %s',paths.FSL,fileOut,fileIn);
+    sentence = sprintf('%s/fslmaths %s -bin %s',paths.FSL,fileSub,fileIn);
     [~,result] = system(sentence);
-
+    % REmove CSF contamination
     fileMas = fullfile(paths.T1.dir,'T1_CSF_mask_inv.nii.gz');
     sentence = sprintf('%s/fslmaths %s -mas %s %s',...
         paths.FSL,fileIn,fileMas,fileIn);
+    [~,result] = system(sentence);
+    sentence = sprintf('%s/fslmaths %s -mas %s %s',...
+        paths.FSL,fileSub,fileMas,fileSub);
     [~,result] = system(sentence);
 
     sentence = sprintf('%s/fslmaths %s -mul -1 -add 1 %s/T1_subcort_mask_inv.nii.gz',...
