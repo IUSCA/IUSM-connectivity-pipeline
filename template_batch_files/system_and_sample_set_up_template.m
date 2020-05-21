@@ -48,7 +48,7 @@ paths.MRtrix = extractBefore(mrtrix,'/dwi2response');
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/N/dc2/projects/brainconnectomics/IADC-IMAS-image-processing/datadir';
+paths.data = '/N/project/kbase-imaging/all_prelim_data';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 
@@ -75,7 +75,7 @@ subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and 
     % subjects copy and paste the second line as necessary.
     
 %clear subjectList %remove the above generated list
-%subjectList(1).name = '10004_1'; 
+%subjectList(1).name = 'SU0360'; 
 %subjectList(end+1).name = 'SUBEJCT2'; % copy this line for additional subjects
 
                     end

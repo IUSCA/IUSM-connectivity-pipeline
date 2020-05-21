@@ -50,11 +50,11 @@ parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(1).true=1;
 parcs.pnodal(1).true=1;
 
-% Schaefer parcellation of yeo17 into 300 nodes
-parcs.plabel(2).name='schaefer300_yeo17';
-parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
-parcs.pcort(2).true=1;
-parcs.pnodal(2).true=1;
+% % Schaefer parcellation of yeo17 into 300 nodes
+% parcs.plabel(2).name='schaefer300_yeo17';
+% parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
+% parcs.pcort(2).true=1;
+% parcs.pnodal(2).true=1;
 
 % % DKI parcellation
 % parcs.plabel(3).name='DKIcort';
@@ -70,13 +70,13 @@ parcs.pnodal(2).true=1;
                     %       =0 is OFF       %
                     
     %  T1   %
-flags.global.T1_prepare_A = 1;
+flags.global.T1_prepare_A = 0;
 flags.global.T1_prepare_B = 0;
     %  fMRI  %
 flags.global.fMRI_A = 0;
     %  DWI   %
-flags.global.DWI_A = 1;
-flags.global.DWI_B = 0; % not fully tested; run at your own risk
+flags.global.DWI_A = 0;
+flags.global.DWI_B = 1; % not fully tested; run at your own risk
 flags.global.DWI_C = 0; % depricated; may not work
 
 %%
@@ -89,16 +89,16 @@ flags.global.DWI_C = 0; % depricated; may not work
                     
 flags.T1.dcm2niix = 0;  % dicom to nifti conversion 
     configs.T1.useCropped = 0; % use cropped field-of-view output of dcm2niix
-flags.T1.denoiser = 1; % denoising % 2 - do not denoise, copy input to output
+flags.T1.denoiser = 0; % denoising % 2 - do not denoise, copy input to output
                                    % 1 - denoise MRI
                                    % 0 - skip if already ran(do not copy input to output)
-flags.T1.anat = 1; % run FSL_anat 
+flags.T1.anat = 0; % run FSL_anat 
     configs.T1.bias = 1; % 0 = no; 1 = weak; 2 = strong;
     configs.T1.crop = 1; % 0 = no; 1 = yes (lots already done by dcm2niix if used)
 flags.T1.bet = 1; % brain extraction and mask generation
-    configs.T1.antsTemplate = 'NKI'; % 'MICCAI' or 'NKI' or 'bet'
-    configs.T1.betF = .28;  % These are brain extraction parameters within FSL bet. (0.2)
-    configs.T1.betG = -0.07; % See fsl bet help page for more details. (0.15)
+    configs.T1.antsTemplate = 'bet'; % 'MICCAI' or 'NKI' or 'IXI' or 'bet'
+    configs.T1.betF = .2;  % These are brain extraction parameters within FSL bet. (0.2)
+    configs.T1.betG = -0.02; % See fsl bet help page for more details. (0.15)
 % currently testing ANTS, which does not require bet inputs
 flags.T1.re_extract = 1; % brain extraction with mask
 
@@ -166,39 +166,39 @@ flags.EPI.SliceTimingCorr = 1; % recommended for TR > 1.2s or non multiband data
     configs.EPI.minTR = 1.7; % skip if TR below minTR; good for multiple acquisition datasets
     configs.EPI.UseTcustom = 1;% 1: use header-extracted times (suggested)
 flags.EPI.MotionCorr = 1;
-flags.EPI.RegT1 = 0;
+flags.EPI.RegT1 = 1;
     configs.EPI.epibetF = 0.3;
     configs.EPI.minVoxelsClust = 8; % originally hardwired to 8
-flags.EPI.RegOthers = 0;
+flags.EPI.RegOthers = 1;
     configs.EPI.GMprobthr = 0.2;% Threshold the GM probability image
                                  % change from 0.25 to 0.2 or 0.15
-flags.EPI.IntNorm4D = 0; % Intensity normalization to global 4D mean of 1000
+flags.EPI.IntNorm4D = 1; % Intensity normalization to global 4D mean of 1000
 %-------------------------------------------------------------------------%
                        % MOTION AND OUTLIER CORRECTION
 %-------------------------------------------------------------------------% 
 % This section must be ran as a whole!
-flags.EPI.NuisanceReg = 0;
+flags.EPI.NuisanceReg = 2;
     % 0 - skip
     % 1 - ICA-based denoising; WARNING: This will smooth your data.
     % 2 - Head Motion Parameter Regression
         configs.EPI.numReg = 24; % 12 (orig and deriv) or 24 (+ sq of 12)
-    flags.EPI.PhysReg = 0; %physiological regressors
+    flags.EPI.PhysReg = 2; %physiological regressors
         % 0 - skip
         % 1 - aCompCorr; PCA based CSF and WM signal regression (up to 5
         %     components)
             configs.EPI.numPC = 5; % 1-5; the maximum and recommended number is 5 % leave empty to putput all
         % 2 - mean WM and CSF signal regression
             configs.EPI.numPhys = 8; % 2-orig; 4-orig+deriv; 8-orig+deriv+sq
-    flags.EPI.GS = 0; % global signal regression 
+    flags.EPI.GS = 1; % global signal regression 
         configs.EPI.numGS = 4; % 1-orig; 2-orig+deriv; 4-orig+deriv+sq        
-    flags.EPI.DemeanDetrend = 0;
-    flags.EPI.BandPass = 0;
+    flags.EPI.DemeanDetrend = 1;
+    flags.EPI.BandPass = 1;
         configs.EPI.fMin = .008; %Parkes 2018 & Satterthwaite 2013 NeuroImage
         configs.EPI.fMax = .08;   
     flags.EPI.scrubbing = 0; % perform scrubbing based on FD and DVARS criteria
         configs.EPI.FDcut = []; % [] uses fsl outlier critera
         configs.EPI.DVARScut = [];
-    flags.EPI.ROIs = 0; % extract parcellation timeseries
+    flags.EPI.ROIs = 1; % extract parcellation timeseries
 %-------------------------------------------------------------------------%   
 %%
                         %------------------%
@@ -213,7 +213,7 @@ flags.DWI.dcm2niix = 0; % dicom to nifti coversion
 flags.DWI.topup = 0; % FSL topup destortion field estimation
     configs.DWI.b0cut = 1; % maximum B-value to be considered B0
 flags.DWI.eddyPREP = 1; % FSL EDDY distortion correction
-    configs.DWI.EDDYf = 0.4; % fsl bet threshold for b0 brain mask used by EDDY
+    configs.DWI.EDDYf = 0.3; % fsl bet threshold for b0 brain mask used by EDDY
 flags.DWI.eddyRUN = 1;   
     configs.DWI.repolON = 1; % use eddy_repol to interpolate missing/outlier data
 flags.DWI.DTIfit = 1; % Tensor estimation and generation of scalar maps
@@ -229,6 +229,9 @@ flags.DWI.DTIfit = 1; % Tensor estimation and generation of scalar maps
                       %----------------------%
 flags.DWI.regT1_2DWI = 1;
 flags.DWI.MRtrix = 1;
+    configs.DWI.seeding = 'wm'; % wm - seed white matter mask
+                                % dyn - dynamic random seeding
+    configs.DWI.numSeeds_perWMvoxel = 2;
 flags.DWI.connMatrix = 1; % generate connectivity matrices
 
 %%
