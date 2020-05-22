@@ -1,5 +1,8 @@
 # IUSM-connectivity-pipeline
 
+## A NEW VERSION OF THIS REPOSITORY IS AVAILABLE AT: https://github.com/IUSCA/IUSM-ConnPipe
+This repository will receive intermittent updates for bug fixes and matlab funtionality, but all major content and support updates will be carried out on the IUSM-ConnPipe repository.
+
 ## Contributors:
    * Evgeny Chumin, Indiana University School of Medicine, 2018
    * John West, Indiana University School of Medicine, 2018
