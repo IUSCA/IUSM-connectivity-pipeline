@@ -29,7 +29,7 @@ if flags.DWI.regT1_2DWI==1
     fileFA1mm = fullfile(paths.DWI.DTIfit,'3_DWI_FA_1mm.nii.gz');
     sentence=sprintf('%s/flirt -in %s -ref %s -out %s -applyisoxfm 1',...
         paths.FSL,fileFA2mm,fileFA2mm,fileFA1mm);
- %!!!!!   [~,result]=system(sentence);
+    [~,result]=system(sentence);
     
     % rigid body of T1 to b0
     disp('rigid body dof 6 to T1')
@@ -38,16 +38,16 @@ if flags.DWI.regT1_2DWI==1
     fileOut = fullfile(paths.DWI.dir,'rT1_dof6.nii.gz');
     sentence = sprintf('%s/flirt -in %s -ref %s -omat %s -dof 6 -interp spline -out %s',...
         paths.FSL,fileIn,fileFA1mm,fileMat1,fileOut);
-%!!!!!    [~,result] = system(sentence); %#ok<*ASGLU>
+    [~,result] = system(sentence); %#ok<*ASGLU>
     sentence=sprintf('%s/fslmaths %s -thr 0 %s',paths.FSL,fileOut,fileOut);
-%!!!!!     [~,result]=system(sentence);
+    [~,result]=system(sentence);
     fileMask = fullfile(paths.T1.dir,'T1_brain_mask.nii.gz');
     fileMaskDWI = fullfile(paths.DWI.dir,'rT1_brain_mask.nii.gz');
     sentence=sprintf('%s/flirt -in %s -ref %s -applyxfm -init %s -out %s -interp nearestneighbour',...
         paths.FSL,fileMask,fileFA1mm,fileMat1,fileMaskDWI);
-%!!!!!     [~,result] = system(sentence);
+    [~,result] = system(sentence);
     sentence=sprintf('%s/fslmaths %s -mas %s %s',paths.FSL,fileOut,fileMaskDWI,fileOut);
-%!!!!!     [~,result] = system(sentence);
+    [~,result] = system(sentence);
     fileWM = fullfile(paths.T1.dir,'T1_WM_mask.nii.gz');
     fileWMDWI = fullfile(paths.DWI.dir,'rT1_WM_mask.nii.gz');
     sentence=sprintf('%s/flirt -in %s -ref %s -applyxfm -init %s -out %s -interp nearestneighbour',...
@@ -61,7 +61,7 @@ if flags.DWI.regT1_2DWI==1
             fileOut = fullfile(paths.DWI.dir,sprintf('rT1_GM_parc_%s.nii.gz',parcs.plabel(k).name));
             sentence=sprintf('%s/flirt -in %s -ref %s -applyxfm -init %s -out %s -interp nearestneighbour',...
                         paths.FSL,fileGMparc,fileFA1mm,fileMat1,fileOut);
- %!!!!!            [~,result] = system(sentence);
+            [~,result] = system(sentence);
         end
     end 
 end
@@ -90,11 +90,11 @@ if flags.DWI.MRtrix==1
     % depending on data quality (i.e. number of shells and directions)
     sentence1=sprintf('dwi2response tournier -voxels %s -force -mask %s -fslgrad %s %s %s %s',...
         voxelsOUT,maskIN,bvecIN,bvalIN,dataIN,fileResponse);
-%!!!!!     [~,dwi2response_return]=system(sentence1);
+    [~,dwi2response_return]=system(sentence1);
     
     % save return as log
     filelog = fullfile(paths.DWI.mrtrix,'1-dwi2response.log');
-%!!!!!     dlmwrite(filelog,dwi2response_return,'delimiter','')
+    dlmwrite(filelog,dwi2response_return,'delimiter','')
         
 %% constrained shperical deconvolution
     disp('2 - Constrained Spherical Deconvolution')
@@ -106,11 +106,11 @@ if flags.DWI.MRtrix==1
    % additional options may be needed for multi-shell data
     sentence2=sprintf('dwi2fod csd -force -fslgrad %s %s -mask %s %s %s %s',...
             bvecIN,bvalIN,maskIN,dataIN,fileResponse,fileFOD);
-%!!!!!     [~,csd_return]=system(sentence2);
+    [~,csd_return]=system(sentence2);
         
         % save return as log
     filelog = fullfile(paths.DWI.mrtrix,'2-dwi2fod.log');
-%!!!!!     dlmwrite(filelog,csd_return,'delimiter','')
+    dlmwrite(filelog,csd_return,'delimiter','')
     
 %% ACT tissue-type volume generation
     disp('3 - Anatomically Constrained Tractography')
@@ -120,11 +120,11 @@ if flags.DWI.MRtrix==1
     % act needs distortion corrected data; should work with no dist corr,
     % but with nonlinear reg, but I havent tried it. 
     sentence3=sprintf('5ttgen fsl -force -premasked %s %s',brainIN,file5tt);
-%!!!!!     [~,fsl5tt_return]=system(sentence3);
+    [~,fsl5tt_return]=system(sentence3);
         
         % save return as log
     filelog = fullfile(paths.DWI.mrtrix,'3-act.log');
-%!!!!!     dlmwrite(filelog,fsl5tt_return,'delimiter','')
+    dlmwrite(filelog,fsl5tt_return,'delimiter','')
     
 %% generate streamlines
     disp('4 - Generating Streamlines')
