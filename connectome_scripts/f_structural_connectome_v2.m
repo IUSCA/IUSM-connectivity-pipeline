@@ -53,10 +53,15 @@ if flags.DWI.regT1_2DWI==1
     sentence=sprintf('%s/flirt -in %s -ref %s -applyxfm -init %s -out %s -interp nearestneighbour',...
         paths.FSL,fileWM,fileFA1mm,fileMat1,fileWMDWI);
     [~,result] = system(sentence);
-    
+end
+if flags.DWI.regParc == 1
+    disp('Registering parcellations to DWI space...')
+    fileFA1mm = fullfile(paths.DWI.DTIfit,'3_DWI_FA_1mm.nii.gz');
+    fileMat1 = fullfile(paths.DWI.dir,'T1_2_FA_dof6.mat');
     % aply to GM nodal parcellation images
     for k=1:length(parcs.pdir)
         if parcs.pnodal(k).true == 1    
+            disp(parcs.plabel(k).name)
             fileGMparc = fullfile(paths.T1.dir,sprintf('T1_GM_parc_%s.nii.gz',parcs.plabel(k).name));
             fileOut = fullfile(paths.DWI.dir,sprintf('rT1_GM_parc_%s.nii.gz',parcs.plabel(k).name));
             sentence=sprintf('%s/flirt -in %s -ref %s -applyxfm -init %s -out %s -interp nearestneighbour',...
@@ -202,6 +207,7 @@ if flags.DWI.connMatrix==1
     disp('Connectivity Matrix Assembly')
     disp('----------------------------')  
     
+    paths.DWI.mrtrix=fullfile(paths.DWI.dir,'MRtrix');
     paths.DWI.matrices=fullfile(paths.DWI.dir,'CONNmats');
         if ~exist(paths.DWI.matrices,'dir')
             mkdir(paths.DWI.matrices)

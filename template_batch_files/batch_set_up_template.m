@@ -45,22 +45,27 @@
 
 %% SET WHICH PARCELLATIONS YOU WANT TO USE
 % Schaefer parcellation of yeo17 into 200 nodes
-parcs.plabel(1).name='schaefer200_yeo17';
-parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
-parcs.pcort(1).true=1;
-parcs.pnodal(1).true=1;
-
+% parcs.plabel(1).name='schaefer200_yeo17';
+% parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
+% parcs.pcort(1).true=1;
+% parcs.pnodal(1).true=1;
+% 
 % % Schaefer parcellation of yeo17 into 300 nodes
 % parcs.plabel(2).name='schaefer300_yeo17';
 % parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
 % parcs.pcort(2).true=1;
 % parcs.pnodal(2).true=1;
-
+% 
 % % DKI parcellation
 % parcs.plabel(3).name='DKIcort';
 % parcs.pdir(3).name='DKIcort';
 % parcs.pcort(3).true=1;
 % parcs.pnodal(3).true=1;
+
+parcs.plabel(1).name='shen';
+parcs.pdir(1).name='blank';
+parcs.pcort(1).true=0;
+parcs.pnodal(1).true=1;
  
 %%
                     %-----------------------%
@@ -92,11 +97,11 @@ flags.T1.dcm2niix = 0;  % dicom to nifti conversion
 flags.T1.denoiser = 0; % denoising % 2 - do not denoise, copy input to output
                                    % 1 - denoise MRI
                                    % 0 - skip if already ran(do not copy input to output)
-flags.T1.anat = 0; % run FSL_anat 
+flags.T1.anat = 1; % run FSL_anat 
     configs.T1.bias = 1; % 0 = no; 1 = weak; 2 = strong;
     configs.T1.crop = 1; % 0 = no; 1 = yes (lots already done by dcm2niix if used)
-flags.T1.bet = 1; % brain extraction and mask generation
-    configs.T1.antsTemplate = 'bet'; % 'MICCAI' or 'NKI' or 'IXI' or 'bet'
+flags.T1.bet = 0; % brain extraction and mask generation
+    configs.T1.antsTemplate = 'NKI'; % 'MICCAI' or 'NKI' or 'IXI' or 'bet'
     configs.T1.betF = .2;  % These are brain extraction parameters within FSL bet. (0.2)
     configs.T1.betG = -0.02; % See fsl bet help page for more details. (0.15)
 % currently testing ANTS, which does not require bet inputs
@@ -111,7 +116,7 @@ flags.T1.re_extract = 1; % brain extraction with mask
                     %------------------------%
                     
 flags.T1.reg2MNI=1;
-    configs.T1.useExistingMats=0;
+    configs.T1.useExistingMats=1;
     configs.T1.useMNIbrain=1; % use MNI152T1_brain (=1) rather than MNI152T1 (=0)
     configs.T1.fnirtSubSamp='4,2,2,1'; %subsampling for fnirt registration to MNI; fnirt default string = '4,2,1,1' pipeline default = '4,2,2,1'
 flags.T1.seg = 1;
@@ -212,11 +217,11 @@ flags.DWI.dcm2niix = 0; % dicom to nifti coversion
     configs.DWI.readout = []; % if empty get from dicom; else specify value
 flags.DWI.topup = 0; % FSL topup destortion field estimation
     configs.DWI.b0cut = 1; % maximum B-value to be considered B0
-flags.DWI.eddyPREP = 1; % FSL EDDY distortion correction
+flags.DWI.eddyPREP = 0; % FSL EDDY distortion correction
     configs.DWI.EDDYf = 0.3; % fsl bet threshold for b0 brain mask used by EDDY
-flags.DWI.eddyRUN = 1;   
+flags.DWI.eddyRUN = 0;   
     configs.DWI.repolON = 1; % use eddy_repol to interpolate missing/outlier data
-flags.DWI.DTIfit = 1; % Tensor estimation and generation of scalar maps
+flags.DWI.DTIfit = 0; % Tensor estimation and generation of scalar maps
     configs.DWI.DTIfitf = 0.3; % brain extraction (FSL bet -f) parameter    
     
 %%
@@ -227,8 +232,9 @@ flags.DWI.DTIfit = 1; % Tensor estimation and generation of scalar maps
                       %----------------------%
                       %  SET sCONN SUBFLAGS  %
                       %----------------------%
-flags.DWI.regT1_2DWI = 1;
-flags.DWI.MRtrix = 1;
+flags.DWI.regT1_2DWI = 0;
+flags.DWI.regParc = 1;
+flags.DWI.MRtrix = 0;
     configs.DWI.seeding = 'wm'; % wm - seed white matter mask
                                 % dyn - dynamic random seeding
     configs.DWI.numSeeds_perWMvoxel = 2;
