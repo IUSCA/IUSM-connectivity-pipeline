@@ -28,8 +28,8 @@ clear fpath
 paths.AFNI = apath(1:end-6);
 clear apath
     % ants brain extraction path
-[~,antspath]=system('which ants.sh');
-paths.ANTS = extractBefore(antspath,'/ants.sh');
+[~,antspath]=system('which antsBrainExtraction.sh');
+paths.ANTS = extractBefore(antspath,'/antsBrainExtraction.sh');
 clear antspath
     % Path to MRtrix
 [~,mrtrix]=system('which dwi2response');
@@ -101,13 +101,31 @@ subjectList =dir(paths.data); subjectList(1:2)=[]; %#ok<*NASGU> %remove '.' and 
 %                 |
 %                 -- UNWARP -- B0_PA_DCM
 
+% ALTERNTIVE if multiple spin echo fielmap scans are available
+% SUBJECT1 -- T1 -- DICOMS
+%          |
+%          -- EPI(#) -- DICOMS (May have multiple EPI scans)
+%          |         |
+%          |         |      (SPIN-ECHO)     
+%          -- UNWARP1 -- SEFM_AP_DICOMS 
+%          |                   | 
+%          |                   -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+%          -- UNWARP2 -- SEFM_AP_DICOMS 
+%          |                   | 
+%          |                   -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+%          | 
+%          -- DWI -- DICOMS
+%                 |
+%                 -- UNWARP -- B0_PA_DCM
+
 configs.name.T1 = 'T1';
 configs.name.epiFolder = 'EPI';
     configs.name.sefmFolder = 'UNWARP'; % Reserved for Field Mapping series
         configs.name.APdcm = 'SEFM_AP_DICOMS'; % Spin Echo A-P
         configs.name.PAdcm = 'SEFM_PA_DICOMS'; % Spin Echo P-A
-        configs.name.GREmagdcm = 'GREFM_MAG_DICOMS'; % Gradient echo FM magnitude series
-        configs.name.GREphasedcm = 'GREFM_PHASE_DICOMS'; % Gradient echo FM phase map series
+configs.name.grefmFolder = 'GREFM_GUST'; % Reserved for Field Mapping series
+    configs.name.GREmagdcm = 'MAG_DICOMS'; % Gradient echo FM magnitude series
+    configs.name.GREphasedcm = 'PHASE_DICOMS'; % Gradient echo FM phase map series
 configs.name.DWI = 'DWI';
     configs.name.unwarpFolder = 'UNWARP';
         configs.name.dcmPA = 'B0_PA_DCM'; %b0 opposite phase encoding

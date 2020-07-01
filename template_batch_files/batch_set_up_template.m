@@ -37,35 +37,24 @@
 %   those nodes to be ordered according to that parcellation during the
 %   visualization of the matrices.
 
-% Initializing parcellation structure (DO NOT CHANGE)
-% parcs.plabel.name=struct.empty;
-% parcs.pdir.name=struct.empty;
-% parcs.pcort.true=struct.empty;
-% parcs.pnodal.true=struct.empty;
-
 %% SET WHICH PARCELLATIONS YOU WANT TO USE
 % Schaefer parcellation of yeo17 into 200 nodes
-% parcs.plabel(1).name='schaefer200_yeo17';
-% parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
-% parcs.pcort(1).true=1;
-% parcs.pnodal(1).true=1;
-% 
-% % Schaefer parcellation of yeo17 into 300 nodes
-% parcs.plabel(2).name='schaefer300_yeo17';
-% parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
-% parcs.pcort(2).true=1;
-% parcs.pnodal(2).true=1;
-% 
-% % DKI parcellation
-% parcs.plabel(3).name='DKIcort';
-% parcs.pdir(3).name='DKIcort';
-% parcs.pcort(3).true=1;
-% parcs.pnodal(3).true=1;
-
-parcs.plabel(1).name='shen';
-parcs.pdir(1).name='blank';
-parcs.pcort(1).true=0;
+parcs.plabel(1).name='schaefer200_yeo17';
+parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
+parcs.pcort(1).true=1;
 parcs.pnodal(1).true=1;
+
+% Schaefer parcellation of yeo17 into 300 nodes
+parcs.plabel(2).name='schaefer300_yeo17';
+parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
+parcs.pcort(2).true=1;
+parcs.pnodal(2).true=1;
+
+% DKI parcellation
+parcs.plabel(3).name='DKIcort';
+parcs.pdir(3).name='DKIcort';
+parcs.pcort(3).true=1;
+parcs.pnodal(3).true=1;
  
 %%
                     %-----------------------%
@@ -79,9 +68,10 @@ flags.global.T1_prepare_A = 0;
 flags.global.T1_prepare_B = 0;
     %  fMRI  %
 flags.global.fMRI_A = 0;
+flags.global.fMRI_B = 1; % currently testing
     %  DWI   %
 flags.global.DWI_A = 0;
-flags.global.DWI_B = 1; % not fully tested; run at your own risk
+flags.global.DWI_B = 1;
 flags.global.DWI_C = 0; % depricated; may not work
 
 %%
@@ -154,17 +144,26 @@ flags.EPI.ReadHeaders = 1; % obtain pertinent scan information
                 %--------------------------------------------%
                 %  Spin Echo Field Map Acquisition
 flags.EPI.SpinEchoUnwarp = 0; % Requires UNWARP directory and approporiate dicoms.
+    % Allow multiple UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2) 
+    configs.EPI.SEindex = 1; % Appends index to configs.name.sefmFolder name
+    configs.EPI.skipSEmap4EPI = 1; % Skip SEmap calculation for EPInum > configs.EPI.skipGREmap4EPI
+                % e.g.; 1 to skip redoing SEmap for EPIs 2-6; 5 to skip for EPI6
     % SPIN ECHO PAIRS (A-P, P-A) Acquistion on the Prisma
     configs.EPI.SEnumMaps = 3; % Fallback number of PAIRS of AP and PA field maps.
     % SEnumMaps is delaulted to if fslinfo cannot determine number of
     % images.
                 %--------------------------------------------%
                 % Gradient recalled echo Field Map Acquisition
+flags.EPI.GREFMUnwarp = 0; % Requires GREfieldmap directory and appropriate dicoms
+    configs.EPI.skipGREmap4EPI=1; % Skip GREmap calculation for EPInum > configs.EPI.skipGREmap4EPI
+                % 0 to ignore. 1 to skip redoing GREmap for EPIs 2-6
     configs.EPI.GREbetf = 0.5; % GRE-specific bet values. Do not change
     configs.EPI.GREbetg = 0;   % GRE-specific bet input. Change if needed 
     configs.EPI.GREdespike = 1; % Perform FM despiking
     configs.EPI.GREsmooth = 3; % GRE phase map smoothing (Gaussian sigma, mm)
-    configs.EPI.EPIdwell = 0.000308; % Dwell time (sec) for the EPI to be unwarped 
+    % Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing
+    % extracted from the json header
+%     configs.EPI.EPIdwell = 0.000308; % Dwell time (sec) for the EPI to be unwarped 
 %-------------------------------------------------------------------------%
                     % PREPROCESSING & ANATOMY REGISTRATION
 flags.EPI.SliceTimingCorr = 1; % recommended for TR > 1.2s or non multiband data
@@ -204,7 +203,50 @@ flags.EPI.NuisanceReg = 2;
         configs.EPI.FDcut = []; % [] uses fsl outlier critera
         configs.EPI.DVARScut = [];
     flags.EPI.ROIs = 1; % extract parcellation timeseries
-%-------------------------------------------------------------------------%   
+%-------------------------------------------------------------------------% 
+%% 
+                    %------------------------%
+                    %  MATRICES AND FIGURES  %
+                    %         fMRI_B         %
+                    %------------------------%
+                    
+                   %--------------------------%
+                   %  SELECT fMRI_B SUBFLAGS  %
+                   %--------------------------%
+
+flags.EPI.FigsMotionGS = 1; % fig 1 of motion and gs trends
+flags.EPI.FigsPreRegress = 0; % fig 2 of tissue data before regression
+flags.EPI.FigsPostRegress = 0; % fig 3 of tissue data after regression
+flags.EPI.FigsDmdtRegress = 1; % fig 4 of dmdt tissue data after regression
+flags.EPI.FigsParcellations = 1; % fig 5 of parcellation data after regression
+flags.EPI.FigsFC = 1; % fig(s) 6+ of functional connectivity for each parcellation
+flags.EPI.SaveFigs = 1; % save .fig .eps .png
+
+                       %------------------%
+                       %  SET PARAMETERS  %
+                       %------------------%
+configs.EPI.preColorMin = 0; % minimum colorbar value for pre-regress plots
+configs.EPI.preColorMax = 1000; % maximum colorbar value for pre-regress plots
+configs.EPI.postColorMin = 0; % minimum colorbar value for post-regress plots
+configs.EPI.postColorMax = 10; % maximum colorbar value for post-regress plots
+configs.EPI.dmdtColorMin = -50; % minimum colorbar value for dmdt-regress plots
+configs.EPI.dmdtColorMax = 50; % maximum colorbar value for dmdt-regress plots
+configs.EPI.parcsColorMin = -10; % minimum colorbar value for parcs-regress plots
+configs.EPI.parcsColorMax = 10; % minimum colorbar value for parcs-regress plots
+configs.EPI.fcColorMinP = -0.5; % -0.75; % minimum colorbar value for Pearson's FC plots
+configs.EPI.fcColorMaxP = 1.0; % 0.75; % maximum colorbar value for Pearson;s FC plots
+configs.EPI.fcColorMinS = -0.5; % -0.75; % minimum colorbar value for Spearman's FC plots
+configs.EPI.fcColorMaxS = 1.0; % 0.75; % maximum colorbar value for Spearman's FC plots
+configs.EPI.fcColorMinZ = -1.5; % -1.0; % minimum colorbar value for Fishers z FC plots
+configs.EPI.fcColorMaxZ = 1.5; % 1.0; % maximum colorbar value for Fisher's z FC plots
+configs.EPI.fcColorMinM = .01; % minimum colorbar value for NMI FC plots
+configs.EPI.fcColorMaxM = 0.6; % 0.5; % maximum colorbar value for NMI FC plots
+% histogramming and fitting Pearson's correlations 
+configs.EPI.nbinPearson = 201; % number of histogram bins (Pearson's correlation)
+configs.EPI.kernelPearsonBw = 0.05; % fitting kernel bandwidth  
+% histogramming and fitting mutual information
+configs.EPI.nbinMutualI = 101; % number of histogram bins (Pearson's correlation)
+configs.EPI.kernelMutualIBw = 0.03; % fitting kernel bandwidth  
 %%
                         %------------------%
                         %  DWI PROCESSING  %
