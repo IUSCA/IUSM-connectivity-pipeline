@@ -13,7 +13,7 @@
             %------------------------------------------------%
 
     % Add path to connectome scripts directory
-paths.scripts = '/N/u/echumin/Carbonate/IUSM-connectivity-pipeline';
+paths.scripts = '/N/dc2/projects/connectivitypipeline/example_for_andrea/jenya/IUSM-connectivity-pipeline';
 addpath(genpath(paths.scripts));
 
 %%  (This may/should already be set in your .bashrc)
