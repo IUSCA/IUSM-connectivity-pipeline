@@ -122,9 +122,6 @@ flags.T1.reg2MNI=1;
 flags.T1.seg = 1;
     % fast segmentation smoothing (0.10 is default)
     configs.T1.segfastH = 0.25;   % was hardwired to 0.25
-    % the lowest image value set to 0 when making a mask, with the
-    % upper threshold (uthr), remaining fixed at 1.
-    configs.T1.masklowthr = 1; % was hardwired to 1
     % flirt, dof6 cost function (default = 'corratio')
     % use 'mutualinfo' if the default fails
     configs.T1.flirtdof6cost = 'mutualinfo'; % 'corratio'-fsl default; 'mutualinfo'-recommended 

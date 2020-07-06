@@ -41,9 +41,9 @@ if flags.T1.seg==1
         warning('%s not found. Exiting...',fileIn')
         return
     end
-        
-    sentence = sprintf('%s/fslmaths %s -thr %s -uthr 1 %s',...
-        paths.FSL,fileIn,configs.T1.masklowthr,fileOut);
+        % one is equal to CSF
+    sentence = sprintf('%s/fslmaths %s -thr 1 -uthr 1 %s',...
+        paths.FSL,fileIn,fileOut);
     [~,result] = system(sentence);
     sentence = sprintf('%s/fslmaths %s/T1_CSF_mask.nii.gz -mul -1 -add 1 %s/T1_CSF_mask_inv.nii.gz',...
         paths.FSL,paths.T1.dir,paths.T1.dir);
