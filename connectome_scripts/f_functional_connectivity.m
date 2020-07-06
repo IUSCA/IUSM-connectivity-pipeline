@@ -260,10 +260,11 @@ if flags.EPI.SpinEchoUnwarp==1
     paths.EPI.PAdcm = fullfile(paths.EPI.SEFM,configs.name.PAdcm);
     
     if ~exist(paths.EPI.SEFM,'dir')
-        warning('%s',paths.EPI.SEFM,' does not exist. Field map correction must be skipped.')
+        fprintf(2,'%s\n',paths.EPI.SEFM)
+        fprintf(2,'Directory does not exist. Field map correction will be skipped.')
     else
         EPInum = str2num(extractAfter(paths.EPI.dir,configs.name.epiFolder)); % EPI session number
-        if EPInum <= configs.EPI.skipSEmap4EPI
+        if isempty(EPInum)==1 || EPInum <= configs.EPI.skipSEmap4EPI
             fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
             fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
             if ~exist(fileInAP,'file') || ~exist(fileInPA,'file')
@@ -271,7 +272,7 @@ if flags.EPI.SpinEchoUnwarp==1
                 sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
                 [~,result] = system(sentence); % remove any existing .nii images
                 fileLog= sprintf('%s/dcm2niix_AP.log',paths.EPI.SEFM);
-                sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.dcm2niix,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
                 [~,result] = system(sentence); % import AP fieldmaps
             
                 fileNiiPA= 'PA';
@@ -295,6 +296,8 @@ if flags.EPI.SpinEchoUnwarp==1
                 [~,result]=system(sentence);
             
                 % Generate an acqparams text file based on number of field maps.
+                paths.EPI.dcm = fullfile(paths.EPI.dir,configs.name.dcmFolder);
+                [dcm_ext]=find_dcm_ext(paths.EPI.dcm);
                 configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext,1);
                 fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
                 APstr=[0 -1 0 configs.EPI.SEreadOutTime];
@@ -415,7 +418,7 @@ elseif flags.EPI.GREFMUnwarp==1
                 if exist(fileMag2,'file'); delete(fileMag2); end
                 % dicom import
                 fileLog= sprintf('%s/dcm2niix.log',paths.GREFM.magdcm);
-                sentence=sprintf('%s/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.dcm2niix,fileNm1,paths.GREFM.dir,paths.GREFM.magdcm,fileLog);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.GREFM.dir,paths.GREFM.magdcm,fileLog);
                 [~,result] = system(sentence);
 %                 % Copy and gzip the nifti images
 %                 if exist(fileMag1,'file')
