@@ -1,0 +1,24 @@
+219.08.12 Evgeny Chumin
+
+These are the Yeo17 network names as displayed on their github repository.
+https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal
+
+
+1	Visual (Central)
+2	Visual (Peripheral)
+3	Somatomotor A
+4	Somatomotor B
+5	Dorsal Attention A
+6	Dorsal Attention B
+7	Salience/Ventral Attention A
+8	Salience/Ventral Attention B
+9	Limbic A
+10	Limbin B
+11	Control A
+12	Control B
+13	Control C
+14	Default A
+15	Default B
+16	Default C
+17	Temporal Parietal
+

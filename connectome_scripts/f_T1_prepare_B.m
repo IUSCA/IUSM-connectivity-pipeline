@@ -216,18 +216,6 @@ if flags.T1.parc==1
         % 07.25.2017 EJC Remove the left over dil parcellation images.
         sentence = sprintf('rm %s %s %s',fileOut,fileOut3);
         [~,result]=system(sentence);
-        %-------------------------------------------------------------------------%
-        % 07.26.2017 EJC Dilate the final GM parcellations. 
-        % NOTE: These are different from those removed above, because they are
-        % true single modal dilations. They will be used by
-        % f_functiona_connectivity to bring parcellations into epi space.
-        fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
-        sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut4);
-        [~,result]=system(sentence);
-        if ~isempty(result)
-            warning('Dilation of %s parcellation error! See return below for details.',parcs.plabel(k).name);
-            disp(result)
-        end
     if parcs.pcort(k).true == 1
         %-------------------------------------------------------------------------%
         % Clean up the cortical parcellation by removing subcortical and
@@ -291,8 +279,45 @@ if flags.T1.parc==1
         [~,result]=system(sentence);
         %-------------------------------------------------------------------------%
         % 07.25.2017 EJC Remove intermediates of the clean-up.
-        sentence = sprintf('rm %s*;rm %s*;rm %s*',FileRoot,FileOut1,FileOut2);
+        sentence = sprintf('rm %s*;rm %s*;rm %s*;',FileRoot,FileOut1,FileOut2);
         [~,result]=system(sentence);
+        sentence = sprintf('rm %s/L_cerebellum_*;rm %s/R_cerebellum_*;',paths.T1.dir,paths.T1.dir);
+        [~,result]=system(sentence); 
+        
+        %% add subcortical fsl parcellation to cortical parcellations
+        if configs.T1.addsubcort == 1
+            fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+            volParc=MRIread(FileIn);
+            MaxID = max(max(max(volParc.vol)));
+            volSubcort=MRIread(fileSubcort);
+            volSubcort.vol(volSubcort.vol==16)=0;
+            %----------------------------------------------------------%
+            if parcs.pnodal(k).true == 1 
+                ids=unique(volSubcort.vol);
+                for s=1:length(ids)
+                    if ids(s)>0
+                        volSubcort.vol(volSubcort.vol==ids(s))=MaxID+(s-1);
+                    end
+                end
+            elseif parcs.pnodal(k).true == 0
+                volSubcort.vol(volSubcort.vol>0)=MaxID+1;
+            end
+            %----------------------------------------------------------%
+            subcorMask=volSubcort.vol > 0;
+            volParc.vol(subcorMask)=0;
+            volParc.vol=volParc.vol+volSubcort.vol;
+            MRIwrite(volParc,FileIn)
+        end
+%-------------------------------------------------------------------------%
     end
+        % 07.26.2017 EJC Dilate the final GM parcellations. 
+        % NOTE: These will be used by f_functional_connectivity to bring parcellations into epi space.
+        fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
+        sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut4);
+        [~,result]=system(sentence);
+        if ~isempty(result)
+            warning('Dilation of %s parcellation error! See return below for details.',parcs.plabel(k).name);
+            disp(result)
+        end
     end
-end
+end 

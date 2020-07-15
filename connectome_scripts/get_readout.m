@@ -32,8 +32,18 @@ else
 end
 
     if length(dir(dicomPath))<= 2 %( '.' '..' are first 2 returns)
-        warning('No files found in dicom directory. Import terminated.')
-        return
+        filejson=fullfile(paths.EPI.dir,'0_epi.json');
+        if exist(filejson,'file')
+            jsonInfo=get_features_json(filejson,0,0);
+            dim1=jsonInfo.acquisition_matrix(1);
+            ees=jsonInfo.effective_echo_spacing;
+            AccF=1; % need to double check this for GE
+            anofel = dim1/AccF;
+            RT = (anofel-1)*ees; 
+        else
+            warning('No files found in dicom directory. Import terminated.')
+            return
+        end
     else
         dicomFiles=dir(dicomPath);
         i=1; % The while loop finds the index of the first dicom file

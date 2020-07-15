@@ -72,8 +72,13 @@ if configs.T1.useExistingMats == 0 || isempty(configs.T1.useExistingMats) % perf
 %% Register T1 to MNI and obtain inverse transformations
 %% flirt dof 6
     disp('     T1 --> MNI152')
-    fileIn = fullfile(paths.T1.dir,'T1_fov_denoised.nii');
-    fileRef = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm.nii.gz');
+    if configs.T1.useMNIbrain == 1
+        fileRef = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm_brain.nii.gz');
+        fileIn = fullfile(paths.T1.dir,'T1_brain.nii.gz');
+    else
+        fileRef = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm.nii.gz');
+        fileIn = fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+    end
     if exist(fileIn,'file') && exist(fileRef,'file')
         fileMat_dof6 = fullfile(paths.T1.reg,'T12MNI_dof6.mat');
         fileOut = fullfile(paths.T1.reg,'T1_dof6');
@@ -104,8 +109,6 @@ if configs.T1.useExistingMats == 0 || isempty(configs.T1.useExistingMats) % perf
 
 %% flirt dof 12
     fileIn = fullfile(paths.T1.reg,'T1_dof6.nii.gz');
-    fileRef = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm.nii.gz');
-
     if exist(fileIn,'file') && exist(fileRef,'file')
         fileMat_dof12 = fullfile(paths.T1.reg,'T12MNI_dof12.mat');
         fileOut = fullfile(paths.T1.reg,'T1_dof12');
@@ -134,7 +137,6 @@ if configs.T1.useExistingMats == 0 || isempty(configs.T1.useExistingMats) % perf
     end    
 %% fnirt
     fileIn = fullfile(paths.T1.reg,'T1_dof12.nii.gz');
-    fileRef = fullfile(paths.MNIparcs,'MNI_templates/MNI152_T1_1mm.nii.gz');
 
     if exist(fileIn,'file') ~=2 || exist(fileRef,'file') ~= 2
         warning('%s or %s not found. Exiting...',fileIn,fileRef)
@@ -223,7 +225,11 @@ for k = 1:numParcs+1
     
     % inv dof 6
     fileIn = fullfile(paths.T1.reg,strcat(parcs.plabel(k).name,'_unwarped_dof12'));
-    fileRef = fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+    if configs.T1.useMNIbrain == 1
+        fileRef = fullfile(paths.T1.dir,'T1_brain.nii.gz');
+    else
+        fileRef = fullfile(paths.T1.dir,'T1_fov_denoised.nii');
+    end    
     fileOut = fullfile(paths.T1.reg,strcat(parcs.plabel(k).name,'_unwarped_dof12_dof6.nii.gz'));
     disp('        dof6')
     sentence = sprintf('%s/flirt -in %s -ref %s -out %s -applyxfm -init %s -interp nearestneighbour -nosearch',...
