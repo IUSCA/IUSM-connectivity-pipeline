@@ -9,8 +9,8 @@
  clearvars
 %---------%
 %% INPUTS
-parc1= MRIread('shen_MNI152_v1_5.nii.gz');
-parc2=MRIread('yeo7_MNI152.nii.gz');
+parc1= MRIread('yeo17_MNI152\yeo17_MNI152.nii.gz');
+parc2=MRIread('yeo7_MNI152\yeo7_MNI152.nii.gz');
 %-----------------------------------------%
 % determine parcellation sizes
 vol1=parc1.vol;
