@@ -211,7 +211,33 @@ if flags.EPI.ReadHeaders==1
         %% TE
         [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0081 ' paths.EPI.dcm '/' dicom_files(1).name]);
         params.EPI.TE = str2double(result(strfind(result,' '):end));
-        fprintf(' -HEADER: Echo Time (TE): %f\n',params.EPI.TE)
+        fprintf(' -HEADER: Echo Time (TE): %f ms\n',params.EPI.TE)
+        
+        % GRAPPA acceleration factor could be used in conjunction with BWPPPE 
+        [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0051,1011 ' paths.EPI.dcm '/' dicom_files(1).name]);
+        params.EPI.GRAPPAacc = result(strfind(result,' '):end);
+        fprintf(' -HEADER: Acceleration factor: %s\n',params.EPI.GRAPPAacc)
+        
+%       fprintf(' -HEADER: BandwidthPerPixelPhaseEncode (Hz): %f\n',params.EPI.BWPPPE)  - not used
+        
+        sentence = sprintf('LD_LIBRARY_PATH= %s/mrinfo -quiet -property TotalReadoutTime %s %s %s',paths.MRtrix, strcat(paths.EPI.dcm,'/',dicom_files(1).name));
+        [~,result] = system(sentence);
+%         [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,1028 ' paths.EPI.dcm '/' dicom_files(1).name]);
+        params.EPI.TotalReadoutTime = str2double(result);
+        fprintf(' -HEADER: TotalReadoutTime: %f s\n',params.EPI.TotalReadoutTime)
+        
+        [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0051,100b ' paths.EPI.dcm '/' dicom_files(1).name]);
+        result = strtrim(result(strfind(result,' '):end));
+        params.EPI.MATSIZPHASE = str2double(extractBefore(result,"*"));
+        fprintf(' -HEADER: MatrixSizePhase: %d\n',params.EPI.MATSIZPHASE)
+
+        if params.EPI.MATSIZPHASE >= 2
+           params.EPI.EffectiveEchoSpacing = params.EPI.TotalReadoutTime/ (params.EPI.MATSIZPHASE-1);
+           fprintf(' -CALCULATED EffectiveEchoSpacing: %f s\n',params.EPI.EffectiveEchoSpacing)
+        else
+           fprintf(' EffectiveEchoSpacing could not be calculated. params.EPI.MATSIZPHASE < 2!')
+           return
+        end
     end
     save(fullfile(paths.EPI.dir,'0_param_dcm_hdr.mat'),'params');
     fprintf('---------------------------------\n')
@@ -223,241 +249,297 @@ if flags.EPI.SpinEchoUnwarp==1
     disp('0. Field Map Correction')
     disp('-----------------------')
     
-    % set up directory paths
-    paths.EPI.SEFM = fullfile(paths.EPI.dir,configs.name.sefmFolder);
+    % set up directory paths (SE field maps)
+    if configs.EPI.SEindex == 0 % Assume single pair of SE fieldmaps within EPI folder
+        paths.EPI.SEFM = fullfile(paths.EPI.dir,configs.name.sefmFolder);
+    else % Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
+        SEdir = strcat(configs.name.sefmFolder,num2str(configs.EPI.SEindex));
+        paths.EPI.SEFM = fullfile(paths.subject, SEdir);
+    end
     paths.EPI.APdcm = fullfile(paths.EPI.SEFM,configs.name.APdcm);
     paths.EPI.PAdcm = fullfile(paths.EPI.SEFM,configs.name.PAdcm);
-    paths.EPI.GREmagdcm = fullfile(paths.EPI.SEFM,configs.name.GREmagdcm);
-    paths.EPI.GREphasedcm = fullfile(paths.EPI.SEFM,configs.name.GREphasedcm);
     
-    if ~exist(paths.EPI.SEFM,'dir') 
-        warning('%s',paths.EPI.SEFM,' does not exist. Field map correction must be skipped.')
-        
+    if ~exist(paths.EPI.SEFM,'dir')
+        fprintf(2,'%s\n',paths.EPI.SEFM)
+        fprintf(2,'Directory does not exist. Field map correction will be skipped.')
     else
-        fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
-        fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
-        if ~exist(fileInAP,'file') || ~exist(fileInPA,'file')
-            fileNiiAP= 'AP';
-            sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
-            [~,result] = system(sentence); % remove any existing .nii images
-            fileLog= sprintf('%s/dcm2niix_AP.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
-            [~,result] = system(sentence); % import AP fieldmaps
-
-            fileNiiPA= 'PA';
-            sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiPA);
-            [~,result] = system(sentence); % remove any existing .nii images
-            fileLog= sprintf('%s/dcm2niix_PA.log',paths.EPI.SEFM);
-            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
-            [~,result] = system(sentence); % import PA fieldmaps
+        EPInum = str2num(extractAfter(paths.EPI.dir,configs.name.epiFolder)); % EPI session number
+        if isempty(EPInum)==1 || EPInum <= configs.EPI.skipSEmap4EPI
+            fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
+            fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
+            if ~exist(fileInAP,'file') || ~exist(fileInPA,'file')
+                fileNiiAP= 'AP';
+                sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiAP);
+                [~,result] = system(sentence); % remove any existing .nii images
+                fileLog= sprintf('%s/dcm2niix_AP.log',paths.EPI.SEFM);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiAP,paths.EPI.SEFM,paths.EPI.APdcm,fileLog);
+                [~,result] = system(sentence); % import AP fieldmaps
             
-            sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
-            [~,result] = system(sentence); % gzip fieldmap volumes
-        end
-        if exist(fileInAP,'file') && exist(fileInPA,'file')
-            %Concatenate the AP then PA into single 4D image
-            fileOut = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
-            if exist(fileOut,'file')
-                sentence=sprintf('rm -fr %s',fileOut);
-                [~,result] = system(sentence); % if it already exists; remove it.
+                fileNiiPA= 'PA';
+                sentence=sprintf('rm -fr %s/%s.nii*',paths.EPI.SEFM,fileNiiPA);
+                [~,result] = system(sentence); % remove any existing .nii images
+                fileLog= sprintf('%s/dcm2niix_PA.log',paths.EPI.SEFM);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNiiPA,paths.EPI.SEFM,paths.EPI.PAdcm,fileLog);
+                [~,result] = system(sentence); % import PA fieldmaps
+            
+                sentence=sprintf('gzip -f %s/AP.nii %s/PA.nii',paths.EPI.SEFM,paths.EPI.SEFM);
+                [~,result] = system(sentence); % gzip fieldmap volumes
             end
-            sentence = sprintf('%s/fslmerge -tr %s %s %s %f',paths.FSL,fileOut,fileInAP,fileInPA,params.EPI.TR);
-            [~,result]=system(sentence);
-            
-            % Generate an acqparams text file based on number of field maps.
-            configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext,1);
-            fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
-            APstr=[0 -1 0 configs.EPI.SEreadOutTime];
-            PAstr=[0 1 0 configs.EPI.SEreadOutTime];
-            sentence = sprintf('%s/fslinfo %s |grep dim4|awk ''{split($0,a," "); {print a[2]}}''|head -n 1',paths.FSL, fileOut');
-            [status,result] = system(sentence); % extract number of volumes from sefield.nii.gz
-            
-            if status == 0
-                if rem(str2num(result),2) == 0
-                    SEnumMaps = str2num(result)/2; % convert number of volumes to a number
-                else
-                    warning('sefile.nii.gz file must contain even number of volumes. Exiting...')
-                    return
+            if exist(fileInAP,'file') && exist(fileInPA,'file')
+                %Concatenate the AP then PA into single 4D image
+                fileOut = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
+                if exist(fileOut,'file')
+                    sentence=sprintf('rm -fr %s',fileOut);
+                    [~,result] = system(sentence); % if it already exists; remove it.
                 end
-            else
-                SEnumMaps = configs.EPI.SEnumMaps; % trust the user input if SEnumMaps failed
-            end
+                sentence = sprintf('%s/fslmerge -tr %s %s %s %f',paths.FSL,fileOut,fileInAP,fileInPA,params.EPI.TR);
+                [~,result]=system(sentence);
             
-            for i=1:SEnumMaps
-                acqparams(i,:)=APstr; %#ok<*AGROW>
-            end
-            for i=SEnumMaps+1:SEnumMaps*2
-                acqparams(i,:)=PAstr;
-            end
-            fileParams = fullfile(paths.EPI.SEFM,'acqparams.txt');
-            dlmwrite(fileParams,acqparams,'delimiter','\t')
+                % Generate an acqparams text file based on number of field maps.
+                paths.EPI.dcm = fullfile(paths.EPI.dir,configs.name.dcmFolder);
+                [dcm_ext]=find_dcm_ext(paths.EPI.dcm);
+                configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext,1);
+                fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
+                APstr=[0 -1 0 configs.EPI.SEreadOutTime];
+                PAstr=[0 1 0 configs.EPI.SEreadOutTime];
+                sentence = sprintf('%s/fslinfo %s |grep dim4|awk ''{split($0,a," "); {print a[2]}}''|head -n 1',paths.FSL, fileOut');
+                [status,result] = system(sentence); % extract number of volumes from sefield.nii.gz
             
-            % Generate (topup) and apply (applytopup) spin echo field map
-            % correction to 0_epi image.
+                if status == 0
+                    if rem(str2num(result),2) == 0
+                        SEnumMaps = str2num(result)/2; % convert number of volumes to a number
+                    else
+                        warning('sefile.nii.gz file must contain even number of volumes. Exiting...')
+                        return
+                    end
+                else
+                    SEnumMaps = configs.EPI.SEnumMaps; % trust the user input if SEnumMaps failed
+                end
+           
+                for i=1:SEnumMaps
+                    acqparams(i,:)=APstr; %#ok<*AGROW>
+                end
+                for i=SEnumMaps+1:SEnumMaps*2
+                    acqparams(i,:)=PAstr;
+                end
+                fileParams = fullfile(paths.EPI.SEFM,'acqparams.txt');
+                dlmwrite(fileParams,acqparams,'delimiter','\t')
             
-            fileIn = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
-            if exist(fileParams,'file') && exist(fileIn,'file')
-                fileOutName = fullfile(paths.EPI.SEFM,'topup_results');
-                fileOutField = fullfile(paths.EPI.SEFM,'topup_field');
-                fileOutUnwarped = fullfile(paths.EPI.SEFM,'topup_unwarped');
-                % Run Topup
+                % Generate (topup) and apply (applytopup) spin echo field map
+                % correction to 0_epi image.
+            
+                fileIn = fullfile(paths.EPI.SEFM,'sefield.nii.gz');
+                if exist(fileParams,'file') && exist(fileIn,'file')
+                    fileOutName = fullfile(paths.EPI.SEFM,'topup_results');
+                    fileOutField = fullfile(paths.EPI.SEFM,'topup_field');
+                    fileOutUnwarped = fullfile(paths.EPI.SEFM,'topup_unwarped');
+                    % Run Topup
                     disp('Starting topup on sefield.nii.gz. This might take a while...')
                     sentence = sprintf('%s/topup --imain=%s --datain=%s --out=%s --fout=%s --iout=%s',...
                         paths.FSL,fileIn,fileParams,fileOutName,fileOutField,fileOutUnwarped);
                     [~,result]=system(sentence);
                 
-                if exist(sprintf('%s.nii.gz',fileOutUnwarped),'file') ~= 2
-                    warning('Topup output not created. Exiting...')
-                    return
-                end
-                
-                fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
-                if exist(fileIn,'file')
-                    fileOut = fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz');
-                    sentence = sprintf('%s/applytopup --imain=%s --datain=%s --inindex=1 --topup=%s --out=%s --method=jac',...
-                        paths.FSL,fileIn,fileParams,fileOutName,fileOut);
-                    disp('Starting applytopup on 0_epi.nii.gz.')
-                    [~,result]=system(sentence);
-                else
-                    warning('0_epi.nii.gz not found. Exiting...')
-                    return
-                end
-                if exist(fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz'),'file')
-                    sentence = sprintf('mv %s %s',fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz'),fullfile(paths.EPI.dir,'0_epi_unwarped.nii.gz'));
-                    [status,result] = system(sentence);
-                    if status == 0
-                        disp('EPI volume unwarping completed.')
-                        fprintf('---------------------------------\n')
+                    if exist(sprintf('%s.nii.gz',fileOutUnwarped),'file') ~= 2
+                        warning('Topup output not created. Exiting...')
+                        return
                     end
                 end
             else
                 warning('UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started')
                 return
             end
-        elseif exist(paths.EPI.GREmagdcm,'dir') && exist(paths.EPI.GREphasedcm,'dir')
-            % Identify dicoms
-            [dcm_ext]=find_dcm_ext(paths.EPI.GREmagdcm);
-            dicom_files=dir(fullfile(paths.EPI.GREmagdcm,sprintf('*.%s',dcm_ext)));
-            if size(dicom_files,1) < 2
-                warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
-                return
-            else
-                % Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
-                % fsval image descrip would do the same but truncates TEs to a single digit!
-                [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0081 ' paths.EPI.GREmagdcm '/' dicom_files(1).name]);
-                aux = strfind(result,' ');
-                TE1 = str2num(result(aux+1:end));
-                [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0081 ' paths.EPI.GREmagdcm '/' dicom_files(2).name]);
-                aux = strfind(result,' ');
-                TE2 = str2num(result(aux+1:end));
-                fprintf('Header extracted TE1 = %5.2f ms, TE2 = %5.2f ms\n',TE1,TE2)
-                DeltaTE = TE2 - TE1;   
+        elseif EPInum > configs.EPI.skipSEmap4EPI
+            strmessage = strcat('Per request: skipping topup for EPI',num2str(EPInum));
+            disp(strmessage)
+        else
+            warning('topup output does not exist or SE map calculation skipped!')
+            return     
+        end
+        fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
+        fileParams = fullfile(paths.EPI.SEFM,'acqparams.txt');
+        fileOutName = fullfile(paths.EPI.SEFM,'topup_results');
+        fileOutCoefName = strcat(fileOutName,'_fieldcoef.nii.gz');
+        if exist(fileIn,'file') && exist(fileParams,'file') && exist(fileOutCoefName,'file')
+            fileOut = fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz');
+            sentence = sprintf('%s/applytopup --imain=%s --datain=%s --inindex=1 --topup=%s --out=%s --method=jac',...
+                paths.FSL,fileIn,fileParams,fileOutName,fileOut);
+            disp('Starting applytopup on 0_epi.nii.gz.')
+            [~,result]=system(sentence);
+        else
+            warning('0_epi.nii.gz not found or topup outputs do not exist. Exiting...')
+            return
+        end
+        if exist(fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz'),'file')
+            sentence = sprintf('mv %s %s',fullfile(paths.EPI.SEFM,'0_epi_unwarped.nii.gz'),fullfile(paths.EPI.dir,'0_epi_unwarped.nii.gz'));
+            [status,result] = system(sentence);
+            if status == 0
+                disp('EPI volume unwarping completed.')
+                fprintf('---------------------------------\n')
             end
-            fileNm1 = 'mag';
-            % remove any existing images
-            fileMag1 = fullfile(paths.EPI.SEFM,'mag.nii');
-            if exist(fileMag1,'file'); delete(fileMag1); end
-            fileMag2 = fullfile(paths.EPI.SEFM,'_e2mag.nii');
-            if exist(fileMag2,'file'); delete(fileMag2); end 
-            % dicom import
-            fileLog= sprintf('%s/dcm2niix.log',paths.EPI.GREmagdcm);
-            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.EPI.SEFM,paths.EPI.GREmagdcm,fileLog);
-            [~,result] = system(sentence);
-            
-            fileNm1 = '_e2'; % dcm2niix automatically prepends for 2nd echo images
-            fileNm2 = 'gre_fieldmap_phasediff';
-            filePhaseMap1 = fullfile(paths.EPI.SEFM,strcat(fileNm1,fileNm2,'.nii'));
-            filePhaseMap2 = fullfile(paths.EPI.SEFM,strcat(fileNm2,'.nii'));
-            % remove any existing file
-            if exist(filePhaseMap1,'file'); delete(filePhaseMap1); end
-            % dicom import
-            fileLog=sprintf('%s/dcm2niix.log',paths.EPI.GREphasedcm);
-            sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',...
-                paths.scripts,fileNm2,paths.EPI.SEFM,paths.EPI.GREphasedcm,fileLog);
-            [~,result] = system(sentence);
-            % Copy and gzip the nifti images
-            if exist(filePhaseMap1,'file')
-                sentence = sprintf('cp %s %s',filePhaseMap1,filePhaseMap2);
-                [~,result] = system(sentence);
-                sentence = sprintf('gzip -f %s',filePhaseMap2);
-                [~,result] = system(sentence);
-                filePhaseMap = sprintf('%s.gz',filePhaseMap2);
-            else
-                warning('%s not found! Exiting...',filePhaseMap1)
-                return
-            end
-            
-            if exist(fileMag1,'file') && exist(fileMag2,'file')
-                fileMagAvg = fullfile(paths.EPI.SEFM,'gre_fieldmap_magAVG');
-                sentence = sprintf('%s/fslmaths %s -add %s -div 2 %s',paths.FSL,...
-                    fileMag1,fileMag2,fileMagAvg);
-                [~,result] = system(sentence);
-                
-                fileIn = sprintf('%s.nii.gz',fileMagAvg);
-                fileMagBrain = fullfile(paths.EPI.SEFM,'gre_fieldmap_magAVG_brain');
-                sentence = sprintf('%s/bet %s %s -f %.4f -g %.4f -m',paths.FSL,...
-                    fileIn,fileMagBrain,configs.EPI.GREbetf,configs.EPI.GREbetg);
-                [~,result] = system(sentence);
-                
-                % Prepare phase map
-                fileFMap = fullfile(paths.EPI.SEFM,strcat(fileNm2,'_prepared'));
-                sentence = sprintf('%s/fsl_prepare_fieldmap SIEMENS %s %s %s %.4f',...
-                    paths.FSL,filePhaseMap,fileMagBrain,fileFMap, DeltaTE);
-                [~,result] = system(sentence);
- 
-                % Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3 mm
-                fileFMapIn = sprintf('%s.nii.gz',fileFMap);
-
-                if configs.EPI.GREdespike == 1
-                    fileFMapRads = fullfile(paths.EPI.SEFM,sprintf('fm_rads_brain_sm%d_m_ds',configs.EPI.GREsmooth));
-                    sentence = sprintf('%s/fugue --loadfmap=%s -s %.2f -m --despike --savefmap=%s',...
-                        paths.FSL,fileFMapIn,configs.EPI.GREsmooth,fileFMapRads);
-                else
-                    fileFMapRads = fullfile(paths.EPI.SEFM,sprintf('fm_rads_brain_sm%d_m',configs.EPI.GREsmooth));
-                    sentence = sprintf('%s/fugue --loadfmap=%s -s %.2f -m --savefmap=%s',...
-                        paths.FSL,fileFMapIn,configs.EPI.GREsmooth,fileFMapRads);
-                end
-                [~,result] = system(sentence);
-                
-                fileFMapRadsOut = sprintf('%s.nii.gz',fileFMapRads);
-                if exist(fileFMapRadsOut,'file')
-                    disp('Fugue successfully created fm_rads_brain field map.')
-                else
-                    warning('%s not created: fugue failed. Exiting...',fileFMapRadOut)
+        end
+    end
+elseif flags.EPI.GREFMUnwarp==1
+    % Gradient echo field maps (directory at the same level as T1 and EPI)
+    %     paths.EPI.GREFM = fullfile(paths.EPI.dir,configs.name.grefmFolder);
+    if ~exist(paths.GREFM.dir,'dir')
+        warning('%s',paths.GREFM.dir,' does not exist. Field map correction must be skipped.')
+    else
+        paths.GREFM.magdcm = fullfile(paths.GREFM.dir,configs.name.GREmagdcm);
+        paths.GREFM.phasedcm = fullfile(paths.GREFM.dir,configs.name.GREphasedcm);
+        fileNm1 = 'gre_fieldmap_mag';
+        fileNm2 = 'gre_fieldmap_phasemap';
+        filePhaseMapNm = 'gre_fieldmap_phasediff';
+        if exist(paths.GREFM.magdcm,'dir') && exist(paths.GREFM.phasedcm,'dir')
+            EPInum = str2num(extractAfter(paths.EPI.dir,configs.name.epiFolder)); % EPI session number
+            if EPInum <= configs.EPI.skipGREmap4EPI
+                % Identify dicoms
+                [dcm_ext]=find_dcm_ext(paths.GREFM.magdcm);
+                dicom_files=dir(fullfile(paths.GREFM.magdcm,sprintf('*.%s',dcm_ext)));
+                if size(dicom_files,1) < 2
+                    warning('No dicom (.IMA or .dcm) images found. Skipping further analysis')
                     return
+                else
+                    % Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
+                    % fsval image descrip would do the same but truncates TEs to a single digit!
+                    [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0081 ' paths.GREFM.magdcm '/' dicom_files(1).name]);
+                    aux = strfind(result,' ');
+                    TE1 = str2num(result(aux+1:end));
+                    [~,result] = system([paths.AFNI '/' 'dicom_hinfo -tag 0018,0081 ' paths.GREFM.magdcm '/' dicom_files(2).name]);
+                    aux = strfind(result,' ');
+                    TE2 = str2num(result(aux+1:end));
+                    fprintf('Header extracted TE1 = %5.2f ms, TE2 = %5.2f ms\n',TE1,TE2)
+                    DeltaTE = TE2 - TE1;
                 end
-% Now upwarp 0_epi.nii.gz
-% Echo Spacing = 1 / [(0019,1028) * (0051,100B component #1)]
-% where 0019,1028 is 40.584
-% and (0051,100B) is 80 per [80*80]
-% SoL denominator is 3246.72 Hz
-% Echo Spacing = 0.000308
-% Echo Spacing Siemens PDF="0.000616"/GRAPPA="2" = 0.000308 
-% TIME="0.000308" sec
-% fugue -i f$STUDY$EXAM-$index2.nii --dwell=$DWELLTIME --loadfmap=$FMAPDIR/$fmap --unwarpdir=y- -u uf$STUDY$EXAM-$index2
-
-                fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
-                if exist(fileIn,'file')
-                    fileOut = fullfile(paths.EPI.dir,'0_epi_unwarped');
-                    sentence = sprintf('%s/fugue -i %s --dwell=%.6f --loadfmap=%s --unwarpdir=y- -u %s',...
-                        paths.FSL,fileIn,configs.EPI.EPIdwell,fileFMapRadsOut,fileOut);
-                    disp('Applying fugue to unwarp 0_epi.nii.gz.')
-                    [~,result]=system(sentence);
-                    if exist(sprintf('%s.nii.gz',fileOut),'file')
-                        disp('0_epi_unwarped.nii.gz successfully created.')
+                
+                % remove any existing images
+                fileMag1 = fullfile(paths.GREFM.dir,strcat(fileNm1,'_e1.nii'));
+                if exist(fileMag1,'file'); delete(fileMag1); end
+                fileMag2 = fullfile(paths.GREFM.dir,strcat(fileNm1,'_e2.nii'));
+                if exist(fileMag2,'file'); delete(fileMag2); end
+                % dicom import
+                fileLog= sprintf('%s/dcm2niix.log',paths.GREFM.magdcm);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',paths.scripts,fileNm1,paths.GREFM.dir,paths.GREFM.magdcm,fileLog);
+                [~,result] = system(sentence);
+%                 % Copy and gzip the nifti images
+%                 if exist(fileMag1,'file')
+%                     sentence = sprintf('gzip -f %s',fileMag1);
+%                     [~,result] = system(sentence);
+%                 else
+%                     warning('%s not found! Exiting...',fileMag1)
+%                     return
+%                 end
+%                 if exist(fileMag2,'file')
+%                     sentence = sprintf('gzip -f %s',fileMag2);
+%                     [~,result] = system(sentence);
+%                 else
+%                     warning('%s not found! Exiting...',fileMag2)
+%                     return
+%                 end
+                
+                % remove any existing file
+                filePhaseMap = fullfile(paths.GREFM.dir,strcat(fileNm2,'_e2_ph.nii'));
+                if exist(filePhaseMap,'file'); delete(filePhaseMap); end
+                % dicom import
+                fileLog=sprintf('%s/dcm2niix.log',paths.GREFM.phasedcm);
+                sentence=sprintf('%s/connectome_scripts/dcm2niix/dcm2niix -f %s -o %s -v y -x y %s > %s',...
+                    paths.scripts,fileNm2,paths.GREFM.dir,paths.GREFM.phasedcm,fileLog);
+                [~,result] = system(sentence);
+                
+                %             filePhaseMap = fullfile(paths.GREFM.dir,strcat(fileNm2,'_e2_ph.nii'));
+                % Copy and gzip the nifti images
+%                 if exist(filePhaseMap,'file')
+%                     sentence = sprintf('gzip -f %s',filePhaseMap);
+%                     [~,result] = system(sentence);
+%                 else
+%                     warning('%s not found! Exiting...',filePhaseMap1)
+%                     return
+%                 end
+                
+                if exist(fileMag1,'file') && exist(fileMag2,'file')
+                    fileMagAvg = fullfile(paths.GREFM.dir,'gre_fieldmap_magAVG');
+                    sentence = sprintf('%s/fslmaths %s -add %s -div 2 %s',paths.FSL,...
+                        fileMag1,fileMag2,fileMagAvg);
+                    [~,result] = system(sentence);
+                    
+                    fileIn = sprintf('%s.nii.gz',fileMagAvg);
+                    fileMagBrain = fullfile(paths.GREFM.dir,'gre_fieldmap_magAVG_brain');
+                    sentence = sprintf('%s/bet %s %s -f %.4f -g %.4f -m',paths.FSL,...
+                        fileIn,fileMagBrain,configs.EPI.GREbetf,configs.EPI.GREbetg);
+                    [~,result] = system(sentence);
+                    
+                    % Prepare phase map
+                    fileFMap = fullfile(paths.GREFM.dir,strcat(fileNm2,'_prepared'));
+                    sentence = sprintf('%s/fsl_prepare_fieldmap SIEMENS %s %s %s %.4f',...
+                        paths.FSL,filePhaseMap,fileMagBrain,fileFMap, DeltaTE);
+                    [~,result] = system(sentence);
+                    
+                    % Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3 mm
+                    fileFMapIn = sprintf('%s.nii.gz',fileFMap);
+                    
+                    if configs.EPI.GREdespike == 1
+                        fileFMapRads = fullfile(paths.GREFM.dir,sprintf('fm_rads_brain_sm%d_m_ds',configs.EPI.GREsmooth));
+                        sentence = sprintf('%s/fugue --loadfmap=%s -s %.2f -m --despike --savefmap=%s',...
+                            paths.FSL,fileFMapIn,configs.EPI.GREsmooth,fileFMapRads);
                     else
-                        warning('fugue unwarping failed. Exiting...')
+                        fileFMapRads = fullfile(paths.GREFM.dir,sprintf('fm_rads_brain_sm%d_m',configs.EPI.GREsmooth));
+                        sentence = sprintf('%s/fugue --loadfmap=%s -s %.2f -m --savefmap=%s',...
+                            paths.FSL,fileFMapIn,configs.EPI.GREsmooth,fileFMapRads);
+                    end
+                    [~,result] = system(sentence);
+                    
+                    fileFMapRadsOut = sprintf('%s.nii.gz',fileFMapRads);
+                    if exist(fileFMapRadsOut,'file')
+                        disp('Fugue successfully created fm_rads_brain field map.')
+                    else
+                        warning('%s not created: fugue failed. Exiting...',fileFMapRadOut)
+                        return
                     end
                 else
-                    warning('0_epi.nii.gz not found. Exiting...')
+                    warning('Field Map images not created. Exiting...')
                     return
                 end
-                
+            elseif EPInum > configs.EPI.skipGREmap4EPI
+                if configs.EPI.GREdespike == 1
+                    fileFMapRadsOut = fullfile(paths.GREFM.dir,sprintf('fm_rads_brain_sm%d_m_ds%s',configs.EPI.GREsmooth,'.nii.gz'));
+                else
+                    fileFMapRadsOut = fullfile(paths.GREFM.dir,sprintf('fm_rads_brain_sm%d_m%s',configs.EPI.GREsmooth,'.nii.gz'));
+                end
+                if exist(fileFMapRadsOut,'file')
+                    sprintf('Using existing %s field map.',fileFMapRadsOut)
+                else
+                    warning('%s does not exist. Exiting...',fileFMapRadOut)
+                    return
+                end
             else
-                warning('Field Map images not created. Exiting...')
+                warning('fm_rads_brain does not exist or GRE map calculation skipped!')
                 return
             end
+            % Now upwarp 0_epi.nii.gz
+            % Echo Spacing = 1 / [(0019,1028) * (0051,100B component #1)]
+            % where 0019,1028 is 40.584
+            % and (0051,100B) is 80 per [80*80]
+            % SoL denominator is 3246.72 Hz
+            % Echo Spacing = 0.000308
+            % Echo Spacing Siemens PDF="0.000616"/GRAPPA="2" = 0.000308
+            % TIME="0.000308" sec
+            % fugue -i f$STUDY$EXAM-$index2.nii --dwell=$DWELLTIME --loadfmap=$FMAPDIR/$fmap --unwarpdir=y- -u uf$STUDY$EXAM-$index2
             
+            fileIn = fullfile(paths.EPI.dir,'0_epi.nii.gz');
+            if exist(fileIn,'file')
+                fileOut = fullfile(paths.EPI.dir,'0_epi_unwarped');
+                sentence = sprintf('%s/fugue -i %s --dwell=%.6f --loadfmap=%s --unwarpdir=y- -u %s',...
+                    paths.FSL,fileIn,params.EPI.EffectiveEchoSpacing,fileFMapRadsOut,fileOut);
+                disp('Applying fugue to unwarp 0_epi.nii.gz.')
+                [~,result]=system(sentence);
+                if exist(sprintf('%s.nii.gz',fileOut),'file')
+                    disp('0_epi_unwarped.nii.gz successfully created.')
+                else
+                    warning('fugue unwarping failed. Exiting...')
+                end
+            else
+                warning('0_epi.nii.gz not found. Exiting...')
+                return
+            end
         else
             warning('UNWARP DICOMS folders or nii images do not exist. Field Map correction failed.')
             return
@@ -798,7 +880,7 @@ switch flags.EPI.NuisanceReg
         disp('   - EPI to T1 linear transform')
         fileMat = fullfile(paths.EPI.dir,'epi_2_T1_bbr_dof6.mat');
         if ~exist(fileMat,'file')
-            warning('Linear EPI->T1 tanformation not found. Please run the RegT1 flag. Exiting...')
+            warning('Linear EPI->T1 transformation not found. Please run the RegT1 flag. Exiting...')
             return
         end
         % T1 -> MNI152_2mm nonlinear transformation
@@ -1127,7 +1209,7 @@ end
         case 2
             nR = sprintf('%s_mPhys%d',nR,configs.EPI.numPhys);
     end
-    % regress-out motion/physilogical regressors  
+    % regress-out motion/physiological regressors  
     resting.vol(~GSmask)=0;
 
         for rg=1:length(zRegressMatrix)
