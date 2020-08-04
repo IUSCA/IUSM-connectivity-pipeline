@@ -1,4 +1,4 @@
-function [RT]=get_readout(paths,dicomext,modality)
+function [RT]=get_readout(paths,configs,dicomext,modality)
 %                               GET_READOUT
 % Obtain readout time from dicom data for distortion correction in FSL EDDY.
 %
@@ -26,10 +26,10 @@ function [RT]=get_readout(paths,dicomext,modality)
 %%
 % set paths and check for dicom directory
 if modality==1
-    dicomPath=fullfile(paths.EPI.dir,'DICOMS');
+    dicomPath=fullfile(paths.EPI.dir,configs.name.dcmFolder);
     filejson=fullfile(paths.EPI.dir,'0_epi.json');
 elseif modality==2
-    dicomPath=fullfile(paths.DWI.dir,'DICOMS');
+    dicomPath=fullfile(paths.DWI.dir,configs.name.dcmFolder);
     filejson=fullfile(paths.DWI.dir,'0_DWI.json');
 else
     fprintf(2,'Modality nor specified for get_readout. Exiting..\n')
@@ -40,18 +40,21 @@ end
         disp('No dicom files found. Looking for json file...')
         if  exist(filejson,'file')
             jsonInfo=get_features_json(filejson,0,0);
-            if modality==1
-                dim1=jsonInfo.acquisition_matrix(1);
-                ees=jsonInfo.effective_echo_spacing;
-            elseif modality==2
-                dim1=jsonInfo.AcquisitionMatrixPE;
-                ees=jsonInfo.EffectiveEchoSpacing;
-            end
-            AccF=1; % need to double check this for GE
-            anofel = dim1/AccF;
             if isfield(jsonInfo,'TotalReadoutTime')
                 RT = jsonInfo.TotalReadoutTime;
             else
+                dim1=jsonInfo.acquisition_matrix(1); % IUSoM (Prisma)
+                if isempty(dim1)
+                    dim1=jsonInfo.AcquisitionMatrixPE; %HCP aging (Prisma)
+                end
+                ees=jsonInfo.effective_echo_spacing; % IUSoM (Prisma)
+                if isempty(ees)
+                    ees=jsonInfo.EffectiveEchoSpacing; %HCP aging (Pisma)
+                end
+                dim1=jsonInfo.AcquisitionMatrixPE;
+                ees=jsonInfo.EffectiveEchoSpacing;
+                AccF=1; % need to double check this for GE
+                anofel = dim1/AccF;
                 RT = (anofel-1)*ees;
             end
         else

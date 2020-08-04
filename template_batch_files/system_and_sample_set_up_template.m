@@ -13,7 +13,7 @@
             %------------------------------------------------%
 
     % Add path to connectome scripts directory
-paths.scripts = '/N/dc2/projects/connectivitypipeline/example_for_andrea/jenya/IUSM-connectivity-pipeline';
+paths.scripts = '/N/project/HCPaging/code/IUSM-connectivity-pipeline';
 addpath(genpath(paths.scripts));
 
 %%  (This may/should already be set in your .bashrc)
@@ -48,7 +48,7 @@ paths.MRtrix = extractBefore(mrtrix,'/dwi2response');
                     %  SELECT SUBJECT DIRECTORIES  %
                     %------------------------------%
     % Set the path to the directory containing you subjects.
-paths.data = '/N/project/kbase-imaging/all_prelim_data';
+paths.data = '/N/project/HCPaging/data-processing';
 
 % NOTE: For supercomputing job submissions DO NOT specify a subjectList
 % here. It is generated separately by the PBS job generator. 

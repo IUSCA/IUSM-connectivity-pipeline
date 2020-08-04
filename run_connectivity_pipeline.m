@@ -225,7 +225,7 @@ if flags.global.DWI_A==1
             if isempty(configs.DWI.readout)
             % calculate readout time
             dicomext=find_dcm_ext(fullfile(paths.DWI.dir,configs.name.dcmFolder));
-            [configs.DWI.readout]=get_readout(paths,dicomext,2);
+            [configs.DWI.readout]=get_readout(paths,configs,dicomext,2);
             end
             % run DWI preprocessing
             [paths,flags,configs]=f_preproc_DWI(paths,flags,configs);

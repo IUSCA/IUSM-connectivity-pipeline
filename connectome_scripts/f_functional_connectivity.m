@@ -264,7 +264,7 @@ if flags.EPI.SpinEchoUnwarp==1
         fprintf(2,'Directory does not exist. Field map correction will be skipped.')
     else
         EPInum = str2num(extractAfter(paths.EPI.dir,configs.name.epiFolder)); % EPI session number
-        if isempty(EPInum)==1 || EPInum <= configs.EPI.skipSEmap4EPI
+        if isempty(EPInum)==1 || isempty(configs.EPI.skipSEmap4EPI)==1 || EPInum <= configs.EPI.skipSEmap4EPI
             fileInAP = fullfile(paths.EPI.SEFM,'AP.nii.gz');
             fileInPA = fullfile(paths.EPI.SEFM,'PA.nii.gz');
             if ~exist(fileInAP,'file') || ~exist(fileInPA,'file')
@@ -298,7 +298,7 @@ if flags.EPI.SpinEchoUnwarp==1
                 % Generate an acqparams text file based on number of field maps.
                 paths.EPI.dcm = fullfile(paths.EPI.dir,configs.name.dcmFolder);
                 [dcm_ext]=find_dcm_ext(paths.EPI.dcm);
-                configs.EPI.SEreadOutTime = get_readout(paths,dcm_ext,1);
+                configs.EPI.SEreadOutTime = get_readout(paths,configs,dcm_ext,1);
                 fprintf("SEreadOutTime: %f\n",configs.EPI.SEreadOutTime);
                 APstr=[0 -1 0 configs.EPI.SEreadOutTime];
                 PAstr=[0 1 0 configs.EPI.SEreadOutTime];
