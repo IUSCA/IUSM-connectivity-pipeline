@@ -61,7 +61,8 @@ if flags.EPI.NuisanceReg == 1
             parc_label = string(zeros(1,max(size(parc_data))));
             TimeSeries = strcat('/TimeSeries_aroma',str_fig,'/8_epi_');
             for p = 1:max(size(parcs.plabel))
-                if parcs.pnodal(p).true == 1 % nodal parcellations only
+                % nodal-only excluding subcortical-only parcellations
+                if parcs.pnodal(p).true == 1 && parcs.psubcortonly(p).true ~= 1
                     roi_series = strcat(regLoc, TimeSeries, parcs.plabel(p).name, '_ROIs.mat');
                     try
                         roi_data = load(roi_series);
@@ -93,7 +94,8 @@ if flags.EPI.NuisanceReg == 1
         if flags.EPI.FigsParcellations == 1
             parc_data = cell(1,max(size(parcs.plabel)));
             for p = 1:max(size(parcs.plabel))
-                if parcs.pnodal(p).true == 1 % nodal parcellations only
+                % nodal-only excluding subcortical-only parcellation
+                if parcs.pnodal(p).true == 1 && parcs.psubcortonly(p).true ~= 1 
                     roi_series = strcat(regLoc, '/TimeSeries_aroma_Gs4_mPhys8/8_epi_', parcs.plabel(p).name, '_ROIs.mat');
                     try
                         roi_data = load(roi_series);
@@ -129,7 +131,8 @@ elseif flags.EPI.NuisanceReg == 2
         if flags.EPI.FigsParcellations == 1
             parc_data = cell(1,max(size(parcs.plabel)));
             for p = 1:max(size(parcs.plabel))
-                if parcs.pnodal(p).true == 1 % nodal parcellations only
+                % nodal-only excluding subcortical-only parcellation
+                if parcs.pnodal(p).true == 1 && parcs.psubcortonly(p).true ~= 1
                     roi_series = strcat(regLoc, '/TimeSeries_scrubbed_hmp24_Gs4_pca3/8_epi_', parcs.plabel(p).name, '_ROIs.mat');
                     try
                         roi_data = load(roi_series);
@@ -161,7 +164,8 @@ elseif flags.EPI.NuisanceReg == 2
         if flags.EPI.FigsParcellations == 1
             parc_data = cell(1,max(size(parcs.plabel)));
             for p = 1:max(size(parcs.plabel))
-                if parcs.pnodal(p).true == 1 % nodal parcellations only
+                % nodal-only except subcortical-only parcellation
+                if parcs.pnodal(p).true == 1 && parcs.psubcortonly(p).true ~= 1
                     roi_series = strcat(regLoc, '/TimeSeries_scrubbed_hmp24_Gs4_mPhys8/8_epi_', parcs.plabel(p).name, '_ROIs.mat');
                     try
                         roi_data = load(roi_series);

@@ -43,19 +43,30 @@ parcs.plabel(1).name='schaefer200_yeo17';
 parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(1).true=1;
 parcs.pnodal(1).true=1;
+parcs.psubcortonly(1).true=0;
 
 % Schaefer parcellation of yeo17 into 300 nodes
 parcs.plabel(2).name='schaefer300_yeo17';
 parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(2).true=1;
 parcs.pnodal(2).true=1;
+parcs.psubcortonly(2).true=0;
 
-% DKI parcellation
-% parcs.plabel(3).name='DKIcort';
-% parcs.pdir(3).name='DKIcort';
-% parcs.pcort(3).true=1;
-% parcs.pnodal(3).true=1;
- 
+% yeo 17 resting state network parcellation
+parcs.plabel(3).name='yeo17';
+parcs.pdir(3).name='yeo17_MNI152';
+parcs.pcort(3).true=1;
+parcs.pnodal(3).true=0;
+parcs.psubcortonly(3).true=0;
+
+% see MelbourneSubCort for the original parcels 
+% Tian subcortical parcellation (7T-derived, S1-S4, coarse-to-fine parcels)
+parcs.plabel(4).name='tian_subcortical_S3';
+parcs.pdir(4).name='Tian_Subcortex_S3_7T_FSLMNI152_1mm';
+parcs.pcort(4).true=0;
+parcs.pnodal(4).true=1;
+parcs.psubcortonly(4).true=1;
+
 %%
                     %-----------------------%
                     %  SELECT GLOBAL FLAGS  %
@@ -117,10 +128,13 @@ flags.T1.seg = 1;
     configs.T1.flirtdof6cost = 'mutualinfo'; % 'corratio'-fsl default; 'mutualinfo'-recommended 
 flags.T1.parc=1;
     configs.T1.numDilReMask = 2;
-    configs.T1.addsubcort=1; % add FSL subcortical to cortical parcellations ONLY
-                             % to nodal parcellations individuals regions
-                             % are added, while to others they are added as
-                             % a single subcortical network.
+    % use FSL or user-provided subcortical parcellation
+    configs.T1.addsubcort=1; % add subcortical to cortical parcellations
+                             % but ONLY to nodal parcellation as individual regions
+                             % to others add as a single subcortical network.
+    configs.T1.subcortUser = 0; % 0 = default FSL, 1 = user-provided
+    % Name of user-provided subcortical parcellation (in templates/MNIparcs)
+    % Set to subcortical-only parcellation name for index "N" with parcs.psubcortonly(N).true=1 
 %%
                           %--------------%
                           %    fMRI_A    %

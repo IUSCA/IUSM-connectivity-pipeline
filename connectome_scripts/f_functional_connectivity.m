@@ -791,9 +791,10 @@ if flags.EPI.RegOthers==1
     paths.FSL,fileIn,configs.EPI.GMprobthr,fileOut);
     [~,result] = system(sentence);
 %%
-% Apllying T1 to EPI transformations to parcellations
+% Applying T1 to EPI transformations to parcellations
     for k=1:length(parcs.pdir)
-        if parcs.pnodal(k).true == 1 % treat as a parcelattion that will serve as noded for connectivity
+        if parcs.psubcortonly(k).true ~= 1 % ignore subcortical-only parcellation
+        if parcs.pnodal(k).true == 1 % treat as a parcelation that will serve as noded for connectivity
             %transformation from T1 to epi space
             fileIn = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
             fileOut = fullfile(paths.EPI.dir,strcat('rT1_parc_',parcs.plabel(k).name,'.nii.gz'));
@@ -835,6 +836,7 @@ if flags.EPI.RegOthers==1
             f_get_largest_clusters_only(fileIn,fileOut,configs.EPI.minVoxelsClust);
         else
             warning('parcs.pnodal.true is not specified for %s parcellation. Transformation to EPI not done',parcs.plabel(k).name)
+        end
         end
     end
 end
@@ -1340,7 +1342,7 @@ if flags.EPI.ROIs==1
             [sizeX,sizeY,sizeZ,numTimePoints] = size(resting.vol);
             
         for k=1:length(parcs.pdir)
-            if parcs.pnodal(k).true==1
+            if parcs.pnodal(k).true==1 && parcs.psubcortonly(k).true ~= 1
                 disp(parcs.plabel(k).name)
                 parcGM = MRIread(fullfile(paths.EPI.dir,strcat('rT1_GM_parc_',parcs.plabel(k).name,'_clean.nii.gz')));
                 parcGM = parcGM.vol.*(~volWM).*(~volCSF).*(volBrain~=0);

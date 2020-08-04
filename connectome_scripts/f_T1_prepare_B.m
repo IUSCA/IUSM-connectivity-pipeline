@@ -11,7 +11,7 @@ function [paths,flags,configs,parcs]=f_T1_prepare_B(paths,flags,configs,parcs)
 %   Mario Dzemidzic, Indiana University School of Medicine
 %   Evgeny Chumin, Indiana University School of Medicine
 
-%% Registration of subjec to MNI
+%% Registration of subject to MNI
 if flags.T1.reg2MNI==1
     % Transform subject T1 into MNI space, then using inverse matrices
     % transform yeo7, yeo17, shen parcellations and MNI ventricles mask
@@ -285,12 +285,34 @@ if flags.T1.parc==1
         %-------------------------------------------------------------------------%  
         end
         %% add subcortical fsl parcellation to cortical parcellations
-        if configs.T1.addsubcort == 1
-            fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+        if configs.T1.addsubcort == 1 && parcs.psubcortonly(k).true ~= 1
+            if configs.T1.subcortUser == 0 % default FSL subcortical 
+                fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+            else
+                nsubcort = 0;
+                for kk = 1:length(parcs.pdir) % for every indicated parcellation
+                    if parcs.psubcortonly(kk).true == 1 % find subcortical-only parcellation
+                        if nsubcort == 0
+                            % check that parcellation is available in T1 space
+                            fileSubcortUser = sprintf('T1_parc_%s.nii.gz',parcs.plabel(kk).name);
+                            if exist(fullfile(paths.T1.dir,fileSubcortUser),'file')
+                                fileSubcort = fullfile(paths.T1.dir,fileSubcortUser);
+                                nsubcort = nsubcort + 1; % allow only one subcortical-only parcellation
+                            end
+                        end
+                    end
+                end
+                if nsubcort ~= 1 % default to FSL subcortical if nsubcort is not 1
+                    fileSubcort = fullfile(paths.T1.dir,'T1_subcort_seg.nii.gz');
+                end
+            end
+                
             volParc=MRIread(FileIn);
             MaxID = max(max(max(volParc.vol)));
             volSubcort=MRIread(fileSubcort);
-            volSubcort.vol(volSubcort.vol==16)=0;
+            if configs.T1.subcortUser == 0 % FSL-provided subcortical
+                volSubcort.vol(volSubcort.vol==16)=0;   
+            end
             %----------------------------------------------------------%
             if parcs.pnodal(k).true == 1 
                 ids=unique(volSubcort.vol);
@@ -311,12 +333,14 @@ if flags.T1.parc==1
 %-------------------------------------------------------------------------%
         % 07.26.2017 EJC Dilate the final GM parcellations. 
         % NOTE: These will be used by f_functional_connectivity to bring parcellations into epi space.
-        fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
-        sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut4);
-        [~,result]=system(sentence);
-        if ~isempty(result)
-            warning('Dilation of %s parcellation error! See return below for details.',parcs.plabel(k).name);
-            disp(result)
+        if parcs.psubcortonly(k).true ~= 1
+            fileOut4 = fullfile(paths.T1.dir,strcat('T1_GM_parc_',parcs.plabel(k).name,'_dil.nii.gz'));
+            sentence = sprintf('%s/fslmaths %s -dilD %s',paths.FSL,fileOut2,fileOut4);
+            [~,result]=system(sentence);
+            if ~isempty(result)
+                warning('Dilation of %s parcellation error! See return below for details.',parcs.plabel(k).name);
+                disp(result)
+            end
         end
     end
 end 
